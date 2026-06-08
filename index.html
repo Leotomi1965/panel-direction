@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel de Dirección — Aplicaciones Carlos</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css" />
+<style>
+  :root {
+    --teal:       #1D9E75;
+    --teal-lt:    #E1F5EE;
+    --teal-dk:    #0F6E56;
+    --blue:       #185FA5;
+    --blue-lt:    #E6F1FB;
+    --amber:      #BA7517;
+    --amber-lt:   #FAEEDA;
+    --red:        #E24B4A;
+    --red-lt:     #FCEBEB;
+    --bg:         #ffffff;
+    --bg2:        #f5f5f3;
+    --bg3:        #eeede9;
+    --text:       #1a1a18;
+    --text2:      #6b6b67;
+    --text3:      #9a9a96;
+    --border:     rgba(0,0,0,0.10);
+    --border2:    rgba(0,0,0,0.18);
+    --radius:     8px;
+    --radius-lg:  12px;
+    --shadow:     0 1px 3px rgba(0,0,0,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:    #1c1c1a;
+      --bg2:   #252523;
+      --bg3:   #2e2e2b;
+      --text:  #f0efe9;
+      --text2: #a0a09a;
+      --text3: #6a6a65;
+      --border:  rgba(255,255,255,0.10);
+      --border2: rgba(255,255,255,0.18);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* ── LAYOUT ── */
+  .shell { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--bg); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; }
+  .main { flex: 1; overflow: auto; }
+  .topbar { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 0 1.5rem; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+  .page { padding: 1.5rem; max-width: 960px; }
+
+  /* ── SIDEBAR ── */
+  .sb-brand { padding: 1rem 1rem .75rem; border-bottom: 0.5px solid var(--border); }
+  .sb-brand-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .sb-brand-sub  { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .sb-section { padding: .625rem 1rem .25rem; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); }
+  .sb-item { display: flex; align-items: center; gap: 8px; padding: 7px 1rem; font-size: 13px; color: var(--text2); cursor: pointer; border-left: 2px solid transparent; transition: all .12s; user-select: none; }
+  .sb-item i { font-size: 16px; }
+  .sb-item:hover { background: var(--bg2); color: var(--text); }
+  .sb-item.active { background: var(--teal-lt); color: var(--teal-dk); border-left-color: var(--teal); font-weight: 500; }
+  .sb-emp-list { padding: .25rem 0; }
+  .sb-emp { display: flex; align-items: center; justify-content: space-between; padding: 6px 1rem; font-size: 13px; color: var(--text2); cursor: pointer; }
+  .sb-emp:hover { background: var(--bg2); }
+  .sb-emp.active { color: var(--teal); font-weight: 500; }
+  .sb-emp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+  .sb-add { margin: .5rem 1rem; }
+
+  /* ── TOPBAR ── */
+  .topbar-title { font-size: 15px; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .currency-toggle { display: flex; background: var(--bg2); border-radius: var(--radius); padding: 2px; }
+  .ct-btn { padding: 4px 12px; font-size: 12px; border: none; cursor: pointer; border-radius: 6px; background: none; color: var(--text2); transition: all .12s; }
+  .ct-btn.active { background: var(--bg); color: var(--text); font-weight: 500; box-shadow: var(--shadow); }
+  .export-btn { display: flex; align-items: center; gap: 5px; padding: 5px 12px; font-size: 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text2); cursor: pointer; }
+  .export-btn:hover { background: var(--bg2); color: var(--text); }
+
+  /* ── CARDS & TABLES ── */
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .875rem; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+  .sc { background: var(--bg2); border-radius: var(--radius); padding: .75rem 1rem; }
+  .sc-num { font-size: 19px; font-weight: 600; color: var(--text); }
+  .sc-lbl { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .sc-delta { font-size: 11px; margin-top: 2px; }
+  .dp { color: var(--teal); } .dn { color: var(--red); }
+  .fin-table { width: 100%; font-size: 13px; border-collapse: collapse; table-layout: fixed; }
+  .fin-table th { text-align: left; color: var(--text2); font-weight: 400; padding: 4px 4px 8px 0; border-bottom: 0.5px solid var(--border); font-size: 12px; }
+  .fin-table th:not(:first-child) { text-align: right; }
+  .fin-table td { padding: 6px 4px; border-bottom: 0.5px solid var(--border); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fin-table td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+  .fin-table tr.sub td { font-weight: 500; background: var(--bg2); }
+  .fin-table tr.tot td { font-weight: 600; color: var(--teal); }
+  .badge { display: inline-flex; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+  .badge-alta  { background: var(--red-lt);   color: #a32d2d; }
+  .badge-media { background: var(--amber-lt); color: var(--amber); }
+  .badge-baja  { background: var(--teal-lt);  color: var(--teal-dk); }
+  .badge-fecha { background: var(--bg2); color: var(--text2); }
+  .badge-usd   { background: var(--blue-lt);  color: var(--blue); }
+  .badge-ars   { background: var(--teal-lt);  color: var(--teal-dk); }
+
+  /* ── TASKS ── */
+  .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .task-item:last-child { border-bottom: none; }
+  .task-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-top: 1px; font-size: 10px; color: var(--teal); }
+  .task-check.done { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .task-text { font-size: 13px; color: var(--text); }
+  .task-text.done { text-decoration: line-through; color: var(--text3); }
+  .task-meta { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+
+  /* ── CONTACTS ── */
+  .contact-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .contact-item:last-child { border-bottom: none; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0; }
+  .contact-name { font-size: 13px; font-weight: 500; }
+  .contact-role { font-size: 12px; color: var(--text3); }
+  .contact-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .icon-btn { border: 0.5px solid var(--border2); background: var(--bg2); border-radius: var(--radius); padding: 5px 8px; cursor: pointer; color: var(--text2); font-size: 14px; }
+  .icon-btn:hover { background: var(--bg3); color: var(--text); }
+
+  /* ── GANTT ── */
+  .gantt-hdr { display: grid; grid-template-columns: 200px 1fr 50px; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--border); margin-bottom: 8px; }
+  .gantt-months { display: grid; grid-template-columns: repeat(12, 1fr); }
+  .gantt-month { font-size: 10px; color: var(--text3); text-align: center; }
+  .gantt-row { display: grid; grid-template-columns: 200px 1fr 50px; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 0.5px solid var(--border); }
+  .gantt-label { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gantt-track { position: relative; height: 20px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
+  .gantt-bar { position: absolute; top: 0; height: 100%; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 600; }
+  .gantt-pct { font-size: 11px; color: var(--text2); text-align: right; }
+
+  /* ── KPI ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  .kpi-card { background: var(--bg2); border-radius: var(--radius); padding: .875rem 1rem; }
+  .kpi-name { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .kpi-val { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .kpi-ref { font-size: 10px; color: var(--text3); }
+  .kok { color: var(--teal); } .kwarn { color: var(--amber); } .kbad { color: var(--red); }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .fl { font-size: 11px; color: var(--text2); font-weight: 500; }
+  input, select, textarea { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); font-family: inherit; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--teal); }
+  .btn { padding: 7px 16px; border-radius: var(--radius); font-size: 13px; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg2); color: var(--text); font-family: inherit; display: inline-flex; align-items: center; gap: 5px; }
+  .btn:hover { background: var(--bg3); }
+  .btn-primary { background: var(--teal); color: #fff; border-color: var(--teal-dk); }
+  .btn-primary:hover { background: var(--teal-dk); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; width: 460px; max-width: 95vw; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+  .modal-box h3 { margin-bottom: 1rem; font-size: 15px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+
+  /* ── EXPORT PANEL ── */
+  .export-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: none; align-items: flex-start; justify-content: flex-end; z-index: 100; padding: 52px 0 0; }
+  .export-overlay.open { display: flex; }
+  .export-panel { background: var(--bg); width: 320px; height: calc(100vh - 52px); overflow-y: auto; padding: 1.25rem; box-shadow: -4px 0 16px rgba(0,0,0,0.12); }
+  .export-formats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .fmt-btn { border: 0.5px solid var(--border2); border-radius: var(--radius); padding: .75rem; text-align: center; cursor: pointer; font-size: 12px; color: var(--text2); }
+  .fmt-btn:hover { background: var(--bg2); }
+  .fmt-btn.sel { border-color: var(--teal); color: var(--teal); background: var(--teal-lt); }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 3px 0; }
+  .sep { border-top: 0.5px solid var(--border); margin: .875rem 0; }
+
+  .empty { color: var(--text3); font-size: 13px; padding: .5rem 0; }
+
+  /* ── SYNC STATUS ── */
+  .sync-bar { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px; border-radius: var(--radius); }
+  .sync-ok   { background: var(--teal-lt); color: var(--teal-dk); }
+  .sync-err  { background: var(--red-lt);  color: #a32d2d; }
+  .sync-load { background: var(--amber-lt); color: var(--amber); }
+  .sync-dot  { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ── MOBILE NAV ── */
+  .mob-topbar { display: none; }
+  .mob-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 49; }
+  .mob-overlay.open { display: block; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 680px) {
+    /* Ocultar sidebar desktop, mostrar topbar mobile */
+    .sidebar { position: fixed; left: -240px; top: 0; bottom: 0; width: 240px; z-index: 50; transition: left .25s ease; overflow-y: auto; }
+    .sidebar.open { left: 0; box-shadow: 4px 0 20px rgba(0,0,0,0.18); }
+    .shell { flex-direction: column; }
+    .main { width: 100%; }
+
+    /* Topbar mobile */
+    .topbar { padding: 0 1rem; height: 52px; position: sticky; top: 0; z-index: 40; }
+    .topbar-title { font-size: 14px; }
+    .topbar-right { gap: 6px; }
+    .currency-toggle { display: none; }
+    .export-btn span { display: none; }
+    .export-btn { padding: 5px 8px; }
+
+    /* Botón hamburguesa */
+    .mob-menu-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); cursor: pointer; font-size: 18px; color: var(--text2); flex-shrink: 0; }
+
+    /* Selector moneda mobile dentro del sidebar */
+    .mob-currency { display: flex; gap: 6px; padding: .75rem 1rem; border-top: 0.5px solid var(--border); }
+    .mob-currency .ct-btn { flex: 1; text-align: center; border: 0.5px solid var(--border2); border-radius: var(--radius); }
+    .mob-currency .ct-btn.active { background: var(--teal); color: #fff; border-color: var(--teal-dk); }
+
+    /* Page padding mobile */
+    .page { padding: 1rem; max-width: 100%; }
+
+    /* Grids apilados */
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    #pg-resumen > div:nth-child(2) { grid-template-columns: 1fr !important; }
+    #pg-balance > div { grid-template-columns: 1fr !important; }
+    #res-info > div { grid-template-columns: 1fr 1fr !important; }
+
+    /* Cards financieros */
+    .fin-table { font-size: 12px; }
+    .fin-table td, .fin-table th { padding: 5px 3px; }
+
+    /* KPI grid */
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Gantt scroll horizontal */
+    .gantt-hdr, .gantt-row { grid-template-columns: 120px 1fr 40px; }
+    .gantt-label { font-size: 11px; }
+
+    /* Topbar EERR/Balance/KPI selects */
+    #pg-eerr > .card:first-child,
+    #pg-balance > .card:first-child,
+    #pg-kpis > .card:first-child { flex-wrap: wrap; gap: 6px; }
+    #pg-eerr select, #pg-balance select, #pg-kpis select { width: 100%; }
+
+    /* Export panel full width */
+    .export-overlay { padding: 52px 0 0; }
+    .export-panel { width: 100%; }
+
+    /* Modal full width */
+    .modal-box { width: 95vw; padding: 1.25rem 1rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .form-group[style*="grid-column"] { grid-column: 1 !important; }
+
+    /* Carga form */
+    #pg-carga .card > div[style*="grid-template-columns:repeat(4"] { grid-template-columns: 1fr 1fr !important; }
+    #pg-carga .card > div[style*="grid-template-columns:repeat(3"] { grid-template-columns: 1fr 1fr !important; }
+  }
+
+  /* Ocultar botón hamburguesa en desktop */
+  @media (min-width: 681px) {
+    .mob-menu-btn { display: none; }
+    .mob-currency { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-brand-name">Panel de Dirección</div>
+      <div class="sb-brand-sub">Aplicaciones Carlos</div>
+    </div>
+    <div class="sb-section">Navegación</div>
+    <div class="sb-item active" data-page="resumen" onclick="nav(this)"><i class="ti ti-layout-dashboard"></i> Resumen</div>
+    <div class="sb-item" data-page="directivos" onclick="nav(this)"><i class="ti ti-users"></i> Directivos</div>
+    <div class="sb-item" data-page="tareas" onclick="nav(this)"><i class="ti ti-checkbox"></i> Tareas</div>
+    <div class="sb-item" data-page="gantt" onclick="nav(this)"><i class="ti ti-chart-gantt"></i> Proyectos Gantt</div>
+    <div class="sb-section">Finanzas</div>
+    <div class="sb-item" data-page="eerr" onclick="nav(this)"><i class="ti ti-report-money"></i> EERR</div>
+    <div class="sb-item" data-page="balance" onclick="nav(this)"><i class="ti ti-scale"></i> Balance</div>
+    <div class="sb-item" data-page="kpis" onclick="nav(this)"><i class="ti ti-gauge"></i> KPIs</div>
+    <div class="sb-item" data-page="carga" onclick="nav(this)"><i class="ti ti-database-import"></i> Cargar datos</div>
+    <div class="sb-section">Empresas</div>
+    <div class="sb-emp-list" id="sbEmpList"></div>
+    <div class="sb-add">
+      <button class="btn btn-sm" style="width:100%;justify-content:center" onclick="openModal('empresa')">
+        <i class="ti ti-plus"></i> Nueva empresa
+      </button>
+    </div>
+    <div class="mob-currency">
+      <button class="ct-btn active" id="mob-ars" onclick="setCurrencyMob('ARS')">ARS</button>
+      <button class="ct-btn" id="mob-usd" onclick="setCurrencyMob('USD')">USD</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="mob-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+        <div class="topbar-title" id="topTitle">Resumen ejecutivo</div>
+      </div>
+      <div class="topbar-right">
+        <div id="syncStatus" class="sync-bar sync-load"><span class="sync-dot"></span> Conectando…</div>
+        <div class="currency-toggle">
+          <button class="ct-btn active" onclick="setCurrency('ARS',this)">ARS</button>
+          <button class="ct-btn" onclick="setCurrency('USD',this)">USD</button>
+        </div>
+        <button class="export-btn" onclick="openExport()"><i class="ti ti-download"></i> <span>Exportar</span></button>
+      </div>
+    </div>
+    <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
+
+    <!-- RESUMEN -->
+    <div class="pg page" id="pg-resumen" style="display:block">
+      <div class="card"><div class="card-title">Indicadores clave</div><div class="stat-grid" id="res-stats"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="card"><div class="card-title">Tareas prioritarias</div><div id="res-tareas"></div></div>
+        <div class="card"><div class="card-title">Avance proyectos</div><div id="res-gantt"></div></div>
+      </div>
+      <div class="card"><div class="card-title">Datos de la empresa</div><div id="res-info"></div></div>
+    </div>
+
+    <!-- DIRECTIVOS -->
+    <div class="pg page" id="pg-directivos" style="display:none">
+      <div class="card" style="margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center">
+        <div class="card-title" style="margin:0">Directivos y contactos</div>
+        <button class="btn btn-sm btn-primary" onclick="openModal('contacto')"><i class="ti ti-plus"></i> Agregar</button>
+      </div>
+      <div class="card"><div id="dir-list"></div></div>
+    </div>
+
+    <!-- TAREAS -->
+    <div class="pg page" id="pg-tareas" style="display:none">
+      <div class="card" style="margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center">
+        <div class="card-title" style="margin:0">Tareas pendientes</div>
+        <button class="btn btn-sm btn-primary" onclick="openModal('tarea')"><i class="ti ti-plus"></i> Nueva tarea</button>
+      </div>
+      <div class="card"><div id="tar-list"></div></div>
+    </div>
+
+    <!-- GANTT -->
+    <div class="pg page" id="pg-gantt" style="display:none">
+      <div class="card" style="margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center">
+        <div class="card-title" style="margin:0">Proyectos de inversión</div>
+        <button class="btn btn-sm btn-primary" onclick="openModal('proyecto')"><i class="ti ti-plus"></i> Nuevo proyecto</button>
+      </div>
+      <div class="card" style="overflow-x:auto">
+        <div class="gantt-hdr">
+          <div style="font-size:11px;color:var(--text3)">Proyecto</div>
+          <div class="gantt-months" id="ganttHdr"></div>
+          <div style="font-size:11px;color:var(--text3);text-align:right">%</div>
+        </div>
+        <div id="ganttBody"></div>
+      </div>
+    </div>
+
+    <!-- EERR -->
+    <div class="pg page" id="pg-eerr" style="display:none">
+      <div class="card" style="margin-bottom:.75rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="card-title" style="margin:0">Período principal</div>
+        <select id="sel-p1" onchange="renderEERR()" style="width:140px"></select>
+        <div class="card-title" style="margin:0">Comparar con</div>
+        <select id="sel-p2" onchange="renderEERR()" style="width:140px"></select>
+      </div>
+      <div class="stat-grid" id="eerr-stats"></div>
+      <div class="card">
+        <table class="fin-table" id="eerr-tbl"></table>
+      </div>
+      <div class="card"><div style="height:220px"><canvas id="chartEERR"></canvas></div></div>
+    </div>
+
+    <!-- BALANCE -->
+    <div class="pg page" id="pg-balance" style="display:none">
+      <div class="card" style="margin-bottom:.75rem;display:flex;align-items:center;gap:10px">
+        <div class="card-title" style="margin:0">Período</div>
+        <select id="sel-bal" onchange="renderBalance()" style="width:140px"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="card"><table class="fin-table" id="tbl-activo"></table></div>
+        <div class="card"><table class="fin-table" id="tbl-pasivo"></table></div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="pg page" id="pg-kpis" style="display:none">
+      <div class="card" style="margin-bottom:.75rem;display:flex;align-items:center;gap:10px">
+        <div class="card-title" style="margin:0">Período</div>
+        <select id="sel-kpi" onchange="renderKPIs()" style="width:140px"></select>
+      </div>
+      <div class="kpi-grid" id="kpi-grid"></div>
+    </div>
+
+    <!-- CARGA -->
+    <div class="pg page" id="pg-carga" style="display:none">
+      <div class="card">
+        <div class="card-title">Cargar período financiero</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem">
+          <div class="form-group">
+            <label class="fl">Mes</label>
+            <select id="c-mes">
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="fl">Año</label><input type="number" id="c-anio" value="2025" /></div>
+          <div class="form-group"><label class="fl">TC ($/USD)</label><input type="number" id="c-tc" placeholder="1000" /></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">
+          <div class="form-group"><label class="fl">Ventas netas</label><input type="number" id="f-ventas" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Costos variables</label><input type="number" id="f-cv" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Costos fijos</label><input type="number" id="f-cf" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Otros ingresos</label><input type="number" id="f-otros" placeholder="0" /></div>
+        </div>
+        <div class="card-title" style="margin-bottom:.5rem">Balance</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">
+          <div class="form-group"><label class="fl">Caja y bancos</label><input type="number" id="f-caja" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Créditos ventas</label><input type="number" id="f-cred" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Inventarios</label><input type="number" id="f-inv" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Bienes de uso</label><input type="number" id="f-bu" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Deudas comerciales</label><input type="number" id="f-dc" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Deuda fin. CP</label><input type="number" id="f-dfcp" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Deuda fin. LP</label><input type="number" id="f-dflp" placeholder="0" /></div>
+          <div class="form-group"><label class="fl">Patrimonio neto</label><input type="number" id="f-pn" placeholder="0" /></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-primary" onclick="guardarPeriodo()"><i class="ti ti-device-floppy"></i> Guardar período</button>
+          <span id="save-msg" style="font-size:12px;color:var(--teal)"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Importar desde Excel (pegar filas)</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">
+          Formato: Período · TC · Ventas · CV · CF · Otros · Caja · Créditos · Inventario · BU · DC · DFCP · DFLP · PN
+        </div>
+        <textarea id="pasteArea" rows="5" placeholder="Pegá las filas copiadas desde Excel aquí…" style="margin-bottom:.5rem"></textarea>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-primary" onclick="parsearPaste()"><i class="ti ti-table-import"></i> Importar</button>
+          <span id="paste-msg" style="font-size:12px;color:var(--teal)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<!-- EXPORT PANEL -->
+<div class="export-overlay" id="exportPanel">
+  <div class="export-panel">
+    <div class="card-title" style="margin-bottom:.75rem">Exportar datos</div>
+    <div class="card-title" style="margin-bottom:.5rem">Módulos</div>
+    <div class="check-row"><input type="checkbox" id="exp-eerr" checked><label for="exp-eerr">Estado de resultados</label></div>
+    <div class="check-row"><input type="checkbox" id="exp-bal" checked><label for="exp-bal">Balance</label></div>
+    <div class="check-row"><input type="checkbox" id="exp-kpi" checked><label for="exp-kpi">KPIs</label></div>
+    <div class="check-row"><input type="checkbox" id="exp-op" checked><label for="exp-op">Operativo (directivos, tareas, proyectos)</label></div>
+    <div class="sep"></div>
+    <div class="card-title" style="margin-bottom:.5rem">Empresas</div>
+    <div id="exp-emps"></div>
+    <div class="sep"></div>
+    <div class="card-title" style="margin-bottom:.5rem">Moneda</div>
+    <div style="display:flex;gap:8px">
+      <div class="check-row"><input type="radio" name="exp-cur" value="ARS" id="exp-ars" checked><label for="exp-ars">ARS</label></div>
+      <div class="check-row"><input type="radio" name="exp-cur" value="USD" id="exp-usd"><label for="exp-usd">USD (según TC histórico)</label></div>
+    </div>
+    <div class="sep"></div>
+    <div class="card-title" style="margin-bottom:.5rem">Formato</div>
+    <div class="export-formats">
+      <div class="fmt-btn sel" id="fmt-xlsx" onclick="selFmt('xlsx')"><i class="ti ti-file-spreadsheet" style="font-size:18px;display:block;margin-bottom:4px"></i>Excel</div>
+      <div class="fmt-btn" id="fmt-pdf" onclick="selFmt('pdf')"><i class="ti ti-file-type-pdf" style="font-size:18px;display:block;margin-bottom:4px"></i>PDF</div>
+      <div class="fmt-btn" id="fmt-csv" onclick="selFmt('csv')"><i class="ti ti-file-text" style="font-size:18px;display:block;margin-bottom:4px"></i>CSV</div>
+    </div>
+    <div class="sep"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeExport()">Cancelar</button>
+      <button class="btn btn-primary" onclick="doExport()"><i class="ti ti-download"></i> Descargar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// MOBILE SIDEBAR
+// ═══════════════════════════════════════════
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('mobOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('mobOverlay').classList.remove('open');
+}
+function setCurrencyMob(c) {
+  currency = c;
+  document.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`[onclick="setCurrencyMob('${c}')"], [onclick="setCurrency('${c}',this)"]`).forEach(b => b.classList.add('active'));
+  renderPage(currentPage);
+}
+
+// ═══════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://ydqasdmvpjlqefqqursu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcWFzZG12cGpscWVmcXF1cnN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDU5MjMsImV4cCI6MjA5NjUyMTkyM30.6dEbls_MztB9gXKbxERLp7yWGRFzSwisC8hEXUHJ1-Q';
+
+const api = {
+  headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+  async get(table, params='') {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: this.headers });
+    return r.json();
+  },
+  async post(table, body) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method:'POST', headers: this.headers, body: JSON.stringify(body) });
+    return r.json();
+  },
+  async patch(table, id, body) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method:'PATCH', headers: this.headers, body: JSON.stringify(body) });
+    return r.json();
+  },
+  async del(table, id) {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: this.headers });
+  }
+};
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let DB = { empresas: [] };
+let activeEmpId = null;
+let currency = 'ARS';
+let currentPage = 'resumen';
+let chartE = null;
+let selectedFmt = 'xlsx';
+
+function aEmp() { return DB.empresas.find(e => e.id === activeEmpId); }
+
+// ═══════════════════════════════════════════
+// SYNC STATUS
+// ═══════════════════════════════════════════
+function syncOk(msg='Sincronizado') {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-bar sync-ok';
+  el.innerHTML = `<span class="sync-dot"></span> ${msg}`;
+}
+function syncErr(msg='Sin conexión') {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-bar sync-err';
+  el.innerHTML = `<span class="sync-dot"></span> ${msg}`;
+}
+function syncLoad(msg='Guardando…') {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-bar sync-load';
+  el.innerHTML = `<span class="sync-dot"></span> ${msg}`;
+}
+
+// ═══════════════════════════════════════════
+// LOAD FROM SUPABASE
+// ═══════════════════════════════════════════
+async function load() {
+  syncLoad('Cargando…');
+  try {
+    const [empresas, directivos, tareas, proyectos, periodos] = await Promise.all([
+      api.get('empresas', 'order=id'),
+      api.get('directivos', 'order=id'),
+      api.get('tareas', 'order=id'),
+      api.get('proyectos', 'order=id'),
+      api.get('periodos', 'order=id')
+    ]);
+
+    DB.empresas = empresas.map(e => ({
+      ...e,
+      directivos: directivos.filter(d => d.empresa_id === e.id),
+      tareas:     tareas.filter(t => t.empresa_id === e.id),
+      proyectos:  proyectos.filter(p => p.empresa_id === e.id),
+      periodos:   periodos.filter(p => p.empresa_id === e.id)
+    }));
+
+    if (DB.empresas.length > 0 && !activeEmpId) activeEmpId = DB.empresas[0].id;
+    syncOk('Conectado');
+    renderSidebar();
+    renderPage(currentPage);
+  } catch(e) {
+    syncErr('Error de conexión');
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const COLORS = ['#1D9E75','#378ADD','#D4537E','#BA7517','#534AB7','#D85A30'];
+const MESES  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function conv(v, tc) { return currency === 'USD' ? v / tc : v; }
+function sym() { return currency === 'USD' ? 'U$S ' : '$ '; }
+function fmt(v, tc) {
+  const n = conv(v, tc);
+  return sym() + Math.round(n).toLocaleString('es-AR');
+}
+function fmtK(v, tc) {
+  const n = conv(v, tc);
+  if (currency === 'USD') return 'U$S ' + Math.round(n).toLocaleString('es-AR');
+  return '$ ' + Math.round(n / 1000).toLocaleString('es-AR') + 'K';
+}
+function pct(a, b) { return b ? (a / b * 100).toFixed(1) + '%' : '—'; }
+function delta(a, b) {
+  if (!b) return '';
+  const d = ((a - b) / Math.abs(b) * 100).toFixed(1);
+  return `<span class="${d >= 0 ? 'dp' : 'dn'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d)}%</span>`;
+}
+function initials(nombre) { return nombre.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase(); }
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const pageTitles = { resumen:'Resumen ejecutivo', directivos:'Directivos y contactos', tareas:'Tareas pendientes', gantt:'Proyectos — Gantt', eerr:'Estado de resultados', balance:'Balance', kpis:'KPIs financieros', carga:'Cargar datos' };
+
+function nav(el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  const page = el.dataset.page;
+  currentPage = page;
+  document.querySelectorAll('.pg').forEach(p => p.style.display = 'none');
+  document.getElementById('pg-' + page).style.display = 'block';
+  document.getElementById('topTitle').textContent = pageTitles[page];
+  renderPage(page);
+  closeSidebar();
+}
+
+function renderPage(page) {
+  if (page === 'resumen') renderResumen();
+  else if (page === 'directivos') renderDirectivos();
+  else if (page === 'tareas') renderTareas();
+  else if (page === 'gantt') renderGantt();
+  else if (page === 'eerr') { populateFinSelects(); renderEERR(); }
+  else if (page === 'balance') { populateFinSelects(); renderBalance(); }
+  else if (page === 'kpis') { populateFinSelects(); renderKPIs(); }
+}
+
+// ═══════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════
+function renderSidebar() {
+  const list = document.getElementById('sbEmpList');
+  list.innerHTML = DB.empresas.map(e => `
+    <div class="sb-emp${e.id === activeEmpId ? ' active' : ''}" onclick="selectEmp(${e.id})">
+      <span>${e.nombre}</span>
+      ${e.id === activeEmpId ? '<span class="sb-emp-dot"></span>' : ''}
+    </div>`).join('');
+}
+
+function selectEmp(id) {
+  activeEmpId = id;
+  renderSidebar();
+  populateFinSelects();
+  renderPage(currentPage);
+}
+
+function setCurrency(c, btn) {
+  currency = c;
+  document.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPage(currentPage);
+}
+
+// ═══════════════════════════════════════════
+// RESUMEN
+// ═══════════════════════════════════════════
+function renderResumen() {
+  const e = aEmp();
+  if (!e) return;
+  const pending = e.tareas.filter(t => !t.done).length;
+  const lastP = e.periodos[e.periodos.length - 1];
+  const progProm = e.proyectos.length ? Math.round(e.proyectos.reduce((s, p) => s + p.avance, 0) / e.proyectos.length) : 0;
+
+  let statsHtml = `
+    <div class="sc"><div class="sc-num">${e.directivos.length}</div><div class="sc-lbl">Directivos</div></div>
+    <div class="sc"><div class="sc-num">${pending}</div><div class="sc-lbl">Tareas pendientes</div></div>
+    <div class="sc"><div class="sc-num">${e.proyectos.length}</div><div class="sc-lbl">Proyectos activos</div></div>`;
+
+  if (lastP) {
+    const ebit = lastP.ventas - lastP.cv - lastP.cf + lastP.otros;
+    statsHtml += `
+      <div class="sc"><div class="sc-num">${fmtK(lastP.ventas, lastP.tc)}</div><div class="sc-lbl">Ventas ${lastP.label}</div></div>
+      <div class="sc"><div class="sc-num">${pct(ebit, lastP.ventas)}</div><div class="sc-lbl">Margen EBIT</div></div>
+      <div class="sc"><div class="sc-num">${progProm}%</div><div class="sc-lbl">Avance proyectos</div></div>`;
+  }
+  document.getElementById('res-stats').innerHTML = statsHtml;
+
+  document.getElementById('res-tareas').innerHTML = e.tareas.filter(t => !t.done).slice(0, 4).map(t =>
+    `<div class="task-item">
+      <div class="task-check"><i class="ti ti-clock" style="font-size:12px;color:var(--text3)"></i></div>
+      <div><div class="task-text">${t.texto}</div>
+      <div class="task-meta"><span class="badge badge-${t.prioridad}">${t.prioridad}</span><span class="badge badge-fecha">${t.fecha}</span></div></div>
+    </div>`).join('') || '<div class="empty">Sin tareas pendientes</div>';
+
+  document.getElementById('res-gantt').innerHTML = e.proyectos.map((p, i) => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+        <span>${p.nombre}</span><span style="color:var(--text2)">${p.avance}%</span>
+      </div>
+      <div style="background:var(--bg2);border-radius:4px;height:8px;overflow:hidden">
+        <div style="width:${p.avance}%;height:100%;background:${COLORS[i % COLORS.length]};border-radius:4px"></div>
+      </div>
+    </div>`).join('') || '<div class="empty">Sin proyectos</div>';
+
+  document.getElementById('res-info').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px">
+      <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">Rubro</div><div>${e.rubro}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">CUIT</div><div>${e.cuit}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">Mail</div><div style="color:var(--teal)">${e.mail}</div></div>
+      <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--text3);margin-bottom:2px">Domicilio</div><div>${e.domicilio}</div></div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+// DIRECTIVOS
+// ═══════════════════════════════════════════
+function renderDirectivos() {
+  const e = aEmp();
+  if (!e) return;
+  document.getElementById('dir-list').innerHTML = e.directivos.map((d, i) => `
+    <div class="contact-item">
+      <div class="avatar" style="background:${COLORS[i % COLORS.length]}">${initials(d.nombre)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="contact-name">${d.nombre}</div>
+        <div class="contact-role">${d.cargo}</div>
+        <div class="contact-detail"><i class="ti ti-phone" style="font-size:12px"></i> ${d.cel} &nbsp;·&nbsp; <i class="ti ti-mail" style="font-size:12px"></i> ${d.mail}</div>
+      </div>
+      <div style="display:flex;gap:5px">
+        <button class="icon-btn" onclick="location.href='tel:${d.cel}'" title="Llamar"><i class="ti ti-phone"></i></button>
+        <button class="icon-btn" onclick="location.href='mailto:${d.mail}'" title="Mail"><i class="ti ti-mail"></i></button>
+      </div>
+    </div>`).join('') || '<div class="empty">Sin directivos cargados</div>';
+}
+
+// ═══════════════════════════════════════════
+// TAREAS
+// ═══════════════════════════════════════════
+function renderTareas() {
+  const e = aEmp();
+  if (!e) return;
+  document.getElementById('tar-list').innerHTML = e.tareas.map((t, i) => `
+    <div class="task-item">
+      <div class="task-check${t.done ? ' done' : ''}" onclick="toggleTask(${t.id})">${t.done ? '<i class="ti ti-check"></i>' : ''}</div>
+      <div style="flex:1">
+        <div class="task-text${t.done ? ' done' : ''}">${t.texto}</div>
+        <div class="task-meta">
+          <span class="badge badge-${t.prioridad}">${t.prioridad}</span>
+          <span class="badge badge-fecha"><i class="ti ti-calendar" style="font-size:11px"></i> ${t.fecha}</span>
+        </div>
+      </div>
+    </div>`).join('') || '<div class="empty">Sin tareas</div>';
+}
+
+async function toggleTask(id) {
+  const e = aEmp();
+  const t = e.tareas.find(t => t.id === id);
+  t.done = !t.done;
+  syncLoad();
+  try {
+    await api.patch('tareas', id, { done: t.done });
+    syncOk();
+  } catch(err) { syncErr(); }
+  renderTareas();
+}
+
+// ═══════════════════════════════════════════
+// GANTT
+// ═══════════════════════════════════════════
+function renderGantt() {
+  const e = aEmp();
+  if (!e) return;
+  document.getElementById('ganttHdr').innerHTML = MESES.map(m => `<div class="gantt-month">${m}</div>`).join('');
+  document.getElementById('ganttBody').innerHTML = e.proyectos.map((p, i) => `
+    <div class="gantt-row">
+      <div class="gantt-label">${p.nombre}</div>
+      <div class="gantt-track">
+        <div class="gantt-bar" style="left:${((p.inicio-1)/12*100).toFixed(1)}%;width:${(p.duracion/12*100).toFixed(1)}%;background:${COLORS[i%COLORS.length]}">${p.avance}%</div>
+      </div>
+      <div class="gantt-pct">${p.avance}%</div>
+    </div>`).join('') || '<div class="empty">Sin proyectos</div>';
+}
+
+// ═══════════════════════════════════════════
+// EERR
+// ═══════════════════════════════════════════
+function populateFinSelects() {
+  const ps = aEmp() ? aEmp().periodos : [];
+  ['sel-p1','sel-p2','sel-bal','sel-kpi'].forEach(id => {
+    const s = document.getElementById(id);
+    if (!s) return;
+    s.innerHTML = ps.map((p, i) => `<option value="${i}">${p.label}</option>`).join('');
+    if (id === 'sel-p2') s.innerHTML = '<option value="-1">— sin comparar —</option>' + s.innerHTML;
+  });
+  const last = ps.length - 1;
+  const s1 = document.getElementById('sel-p1'); if(s1) s1.value = last;
+  const sb = document.getElementById('sel-bal'); if(sb) sb.value = last;
+  const sk = document.getElementById('sel-kpi'); if(sk) sk.value = last;
+  const s2 = document.getElementById('sel-p2'); if(s2) s2.value = last > 0 ? last - 1 : -1;
+}
+
+function getP(id) { const i = parseInt(document.getElementById(id).value); return i >= 0 ? aEmp().periodos[i] : null; }
+
+function renderEERR() {
+  const p = getP('sel-p1'), p2 = getP('sel-p2');
+  if (!p) return;
+  const tc = p.tc, tc2 = p2 ? p2.tc : 1;
+  const mb = p.ventas - p.cv, ebit = mb - p.cf + p.otros;
+  const mb2 = p2 ? p2.ventas - p2.cv : null, ebit2 = p2 ? p2.ventas - p2.cv - p2.cf + p2.otros : null;
+
+  document.getElementById('eerr-stats').innerHTML = `
+    <div class="sc"><div class="sc-num">${fmtK(p.ventas,tc)}</div><div class="sc-lbl">Ventas ${p.label}</div><div class="sc-delta">${delta(p.ventas,p2?.ventas)}</div></div>
+    <div class="sc"><div class="sc-num">${pct(mb,p.ventas)}</div><div class="sc-lbl">Margen bruto %</div></div>
+    <div class="sc"><div class="sc-num">${fmtK(ebit,tc)}</div><div class="sc-lbl">EBIT</div><div class="sc-delta">${p2?delta(ebit,ebit2):''}</div></div>
+    <div class="sc"><div class="sc-num">${pct(ebit,p.ventas)}</div><div class="sc-lbl">Margen EBIT %</div></div>`;
+
+  const col2 = p2 ? `<th>${p2.label}${currency==='USD'?' TC '+tc2:''}</th>` : '';
+  const row = (lbl, v1, v2, cls='') => `<tr class="${cls}"><td>${lbl}</td><td>${fmt(v1,tc)}</td>${p2?`<td>${fmt(v2??0,tc2)}</td>`:''}</tr>`;
+  document.getElementById('eerr-tbl').innerHTML = `
+    <thead><tr><th style="width:45%">Concepto</th><th>${p.label}${currency==='USD'?' (TC '+tc+')':''}</th>${col2}</tr></thead>
+    <tbody>
+      ${row('Ventas netas',p.ventas,p2?.ventas,'sub')}
+      ${row('— Costos variables',-p.cv,p2?-p2.cv:0)}
+      ${row('Margen de contribución',mb,mb2??0,'sub')}
+      ${row('— Costos fijos',-p.cf,p2?-p2.cf:0)}
+      ${row('+ Otros ingresos',p.otros,p2?.otros??0)}
+      ${row('Resultado operativo (EBIT)',ebit,ebit2??0,'tot')}
+    </tbody>`;
+
+  if (chartE) chartE.destroy();
+  const ps = aEmp().periodos;
+  chartE = new Chart(document.getElementById('chartEERR'), {
+    type: 'bar',
+    data: {
+      labels: ps.map(p => p.label),
+      datasets: [
+        { label:'Ventas', data: ps.map(p => Math.round(conv(p.ventas,p.tc)/1000)), backgroundColor:'#9FE1CB', borderRadius:3 },
+        { label:'Margen bruto', data: ps.map(p => Math.round(conv(p.ventas-p.cv,p.tc)/1000)), backgroundColor:'#5DCAA5', borderRadius:3 },
+        { label:'EBIT', data: ps.map(p => Math.round(conv(p.ventas-p.cv-p.cf+p.otros,p.tc)/1000)), backgroundColor:'#1D9E75', borderRadius:3 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{autoSkip:false,maxRotation:30,font:{size:11}}}, y:{ticks:{callback:v=>v+'K',font:{size:11}}} } }
+  });
+}
+
+// ═══════════════════════════════════════════
+// BALANCE
+// ═══════════════════════════════════════════
+function renderBalance() {
+  const p = getP('sel-bal'); if (!p) return;
+  const tc = p.tc;
+  const acCC = p.caja+p.cred+p.inv, acT = acCC+p.bu;
+  const pasCC = p.dc+p.dfcp, pasT = pasCC+p.dflp;
+  const r = (lbl, v, cls='') => `<tr class="${cls}"><td>${lbl}</td><td>${v===''?'':fmt(v,tc)}</td></tr>`;
+  document.getElementById('tbl-activo').innerHTML = `
+    <thead><tr><th style="width:65%">Concepto</th><th>${p.label}${currency==='USD'?' TC '+tc:''}</th></tr></thead>
+    <tbody>
+      ${r('Activo corriente','','sub')}
+      ${r('  Caja y bancos',p.caja)}${r('  Créditos por ventas',p.cred)}${r('  Inventarios',p.inv)}
+      ${r('Total activo corriente',acCC,'sub')}
+      ${r('Activo no corriente','','sub')}${r('  Bienes de uso (neto)',p.bu)}
+      ${r('Total activo no corriente',p.bu,'sub')}
+      ${r('TOTAL ACTIVO',acT,'tot')}
+    </tbody>`;
+  document.getElementById('tbl-pasivo').innerHTML = `
+    <thead><tr><th style="width:65%">Concepto</th><th>${p.label}${currency==='USD'?' TC '+tc:''}</th></tr></thead>
+    <tbody>
+      ${r('Pasivo corriente','','sub')}${r('  Deudas comerciales',p.dc)}${r('  Deudas financieras CP',p.dfcp)}
+      ${r('Total pasivo corriente',pasCC,'sub')}
+      ${r('Pasivo no corriente','','sub')}${r('  Deudas financieras LP',p.dflp)}
+      ${r('Total pasivo no corriente',p.dflp,'sub')}
+      ${r('Total pasivo',pasT,'sub')}
+      ${r('Patrimonio neto',p.pn,'tot')}
+      ${r('Total pasivo + PN',pasT+p.pn,'tot')}
+    </tbody>`;
+}
+
+// ═══════════════════════════════════════════
+// KPIs
+// ═══════════════════════════════════════════
+function renderKPIs() {
+  const p = getP('sel-kpi'); if (!p) return;
+  const tc = p.tc;
+  const ebit = p.ventas-p.cv-p.cf+p.otros, mb = p.ventas-p.cv;
+  const acCC = p.caja+p.cred+p.inv, pasCC = p.dc+p.dfcp, deudaT = p.dc+p.dfcp+p.dflp;
+  const kpis = [
+    { n:'Margen bruto', v:pct(mb,p.ventas), ref:'MC / Ventas — ref: >30%', s:mb/p.ventas>.3?'ok':mb/p.ventas>.2?'warn':'bad' },
+    { n:'Margen EBIT', v:pct(ebit,p.ventas), ref:'EBIT / Ventas — ref: >10%', s:ebit/p.ventas>.1?'ok':ebit/p.ventas>0?'warn':'bad' },
+    { n:'Ventas '+currency, v:fmtK(p.ventas,tc), ref:'Período: '+p.label+(currency==='USD'?' · TC '+tc:''), s:'ok' },
+    { n:'EBIT '+currency, v:fmtK(ebit,tc), ref:'Resultado operativo', s:ebit>0?'ok':'bad' },
+    { n:'Liquidez corriente', v:(acCC/pasCC).toFixed(2)+'x', ref:'Act.corriente / Pas.corriente — ref: >1.5', s:acCC/pasCC>1.5?'ok':acCC/pasCC>1?'warn':'bad' },
+    { n:'Liquidez ácida', v:((p.caja+p.cred)/pasCC).toFixed(2)+'x', ref:'(Caja+Cred)/Pas.corriente — ref: >1', s:(p.caja+p.cred)/pasCC>1?'ok':(p.caja+p.cred)/pasCC>.7?'warn':'bad' },
+    { n:'Endeudamiento', v:pct(deudaT,p.pn), ref:'Deuda total / PN — ref: <100%', s:deudaT/p.pn<1?'ok':deudaT/p.pn<1.5?'warn':'bad' },
+    { n:'Deuda / EBIT', v:ebit>0?(deudaT/ebit).toFixed(1)+'x':'—', ref:'Años para repagar — ref: <4x', s:ebit>0&&deudaT/ebit<4?'ok':ebit>0&&deudaT/ebit<6?'warn':'bad' },
+  ];
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-name">${k.n}</div>
+      <div class="kpi-val k${k.s}">${k.v}</div>
+      <div class="kpi-ref">${k.ref}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// CARGA DE DATOS
+// ═══════════════════════════════════════════
+async function guardarPeriodo() {
+  const mes = document.getElementById('c-mes').value;
+  const anio = document.getElementById('c-anio').value;
+  const tc = parseFloat(document.getElementById('c-tc').value) || 1000;
+  const g = id => parseFloat(document.getElementById(id).value) || 0;
+  const label = mes.slice(0,3) + ' ' + anio;
+  const periodo = { empresa_id: activeEmpId, label, tc, ventas:g('f-ventas'), cv:g('f-cv'), cf:g('f-cf'), otros:g('f-otros'), caja:g('f-caja'), cred:g('f-cred'), inv:g('f-inv'), bu:g('f-bu'), dc:g('f-dc'), dfcp:g('f-dfcp'), dflp:g('f-dflp'), pn:g('f-pn') };
+  syncLoad();
+  try {
+    const [saved] = await api.post('periodos', periodo);
+    aEmp().periodos.push(saved);
+    syncOk('Período guardado');
+    document.querySelectorAll('#pg-carga input[type=number]').forEach(i => i.value = '');
+    document.getElementById('save-msg').textContent = '✓ Guardado: ' + label;
+    setTimeout(() => document.getElementById('save-msg').textContent = '', 3000);
+  } catch(e) { syncErr('Error al guardar'); }
+}
+
+async function parsearPaste() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  const lines = raw.split('\n').filter(l => l.trim());
+  let ok = 0;
+  const periodos = [];
+  lines.forEach(line => {
+    const cols = line.split(/\t|;/).map(c => c.trim());
+    if (cols.length < 14) return;
+    const nums = cols.slice(1, 14).map(c => parseFloat(c.replace(/[.$,\s]/g,'')) || 0);
+    periodos.push({ empresa_id: activeEmpId, label:cols[0], tc:nums[0], ventas:nums[1], cv:nums[2], cf:nums[3], otros:nums[4], caja:nums[5], cred:nums[6], inv:nums[7], bu:nums[8], dc:nums[9], dfcp:nums[10], dflp:nums[11], pn:nums[12] });
+    ok++;
+  });
+  if (!ok) return;
+  syncLoad('Importando…');
+  try {
+    const saved = await api.post('periodos', periodos);
+    aEmp().periodos.push(...saved);
+    syncOk(`${ok} período(s) importado(s)`);
+    document.getElementById('pasteArea').value = '';
+    document.getElementById('paste-msg').textContent = `✓ ${ok} período(s) importado(s)`;
+    setTimeout(() => document.getElementById('paste-msg').textContent = '', 3000);
+  } catch(e) { syncErr('Error al importar'); }
+}
+
+// ═══════════════════════════════════════════
+// MODALES
+// ═══════════════════════════════════════════
+function openModal(tipo) {
+  const box = document.getElementById('modalBox');
+  let html = '';
+  if (tipo === 'empresa') {
+    html = `<h3>Nueva empresa</h3>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1"><label class="fl">Razón social</label><input id="m-nombre" /></div>
+        <div class="form-group"><label class="fl">Rubro</label><input id="m-rubro" /></div>
+        <div class="form-group"><label class="fl">CUIT</label><input id="m-cuit" /></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="fl">Domicilio</label><input id="m-dom" /></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="fl">Mail institucional</label><input id="m-mail" /></div>
+      </div>
+      <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveEmpresa()">Guardar</button></div>`;
+  } else if (tipo === 'contacto') {
+    html = `<h3>Nuevo directivo</h3>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1"><label class="fl">Nombre completo</label><input id="m-cn" /></div>
+        <div class="form-group"><label class="fl">Cargo</label><input id="m-cc" /></div>
+        <div class="form-group"><label class="fl">Celular</label><input id="m-ccel" /></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="fl">Email</label><input id="m-cmail" /></div>
+      </div>
+      <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveContacto()">Guardar</button></div>`;
+  } else if (tipo === 'tarea') {
+    html = `<h3>Nueva tarea</h3>
+      <div class="form-group" style="margin-bottom:10px"><label class="fl">Descripción</label><input id="m-tt" /></div>
+      <div class="form-grid">
+        <div class="form-group"><label class="fl">Prioridad</label><select id="m-tp"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
+        <div class="form-group"><label class="fl">Fecha límite</label><input type="date" id="m-tf" /></div>
+      </div>
+      <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveTarea()">Guardar</button></div>`;
+  } else if (tipo === 'proyecto') {
+    html = `<h3>Nuevo proyecto</h3>
+      <div class="form-group" style="margin-bottom:10px"><label class="fl">Nombre del proyecto</label><input id="m-pn" /></div>
+      <div class="form-grid">
+        <div class="form-group"><label class="fl">Mes de inicio (1–12)</label><input type="number" id="m-pi" min="1" max="12" value="1" /></div>
+        <div class="form-group"><label class="fl">Duración (meses)</label><input type="number" id="m-pd" min="1" max="12" value="3" /></div>
+        <div class="form-group"><label class="fl">Avance actual (%)</label><input type="number" id="m-pa" min="0" max="100" value="0" /></div>
+      </div>
+      <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProyecto()">Guardar</button></div>`;
+  }
+  box.innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+async function saveEmpresa() {
+  const n = document.getElementById('m-nombre').value.trim(); if (!n) return;
+  const empresa = { nombre:n, rubro:document.getElementById('m-rubro').value||'—', cuit:document.getElementById('m-cuit').value||'—', domicilio:document.getElementById('m-dom').value||'—', mail:document.getElementById('m-mail').value||'—' };
+  syncLoad();
+  try {
+    const [saved] = await api.post('empresas', empresa);
+    DB.empresas.push({ ...saved, directivos:[], tareas:[], proyectos:[], periodos:[] });
+    activeEmpId = saved.id;
+    syncOk('Empresa guardada');
+    closeModal(); renderSidebar(); renderPage(currentPage);
+  } catch(e) { syncErr('Error al guardar'); }
+}
+
+async function saveContacto() {
+  const contacto = { empresa_id: activeEmpId, nombre:document.getElementById('m-cn').value||'Sin nombre', cargo:document.getElementById('m-cc').value||'—', cel:document.getElementById('m-ccel').value||'—', mail:document.getElementById('m-cmail').value||'—' };
+  syncLoad();
+  try {
+    const [saved] = await api.post('directivos', contacto);
+    aEmp().directivos.push(saved);
+    syncOk('Directivo guardado');
+    closeModal(); renderDirectivos();
+  } catch(e) { syncErr('Error al guardar'); }
+}
+
+async function saveTarea() {
+  const tarea = { empresa_id: activeEmpId, texto:document.getElementById('m-tt').value||'Nueva tarea', prioridad:document.getElementById('m-tp').value, fecha:document.getElementById('m-tf').value||'—', done:false };
+  syncLoad();
+  try {
+    const [saved] = await api.post('tareas', tarea);
+    aEmp().tareas.push(saved);
+    syncOk('Tarea guardada');
+    closeModal(); renderTareas();
+  } catch(e) { syncErr('Error al guardar'); }
+}
+
+async function saveProyecto() {
+  const proyecto = { empresa_id: activeEmpId, nombre:document.getElementById('m-pn').value||'Nuevo proyecto', inicio:parseInt(document.getElementById('m-pi').value)||1, duracion:parseInt(document.getElementById('m-pd').value)||3, avance:parseInt(document.getElementById('m-pa').value)||0 };
+  syncLoad();
+  try {
+    const [saved] = await api.post('proyectos', proyecto);
+    aEmp().proyectos.push(saved);
+    syncOk('Proyecto guardado');
+    closeModal(); renderGantt();
+  } catch(e) { syncErr('Error al guardar'); }
+}
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function openExport() {
+  document.getElementById('exp-emps').innerHTML = DB.empresas.map(e =>
+    `<div class="check-row"><input type="checkbox" id="exp-e${e.id}" checked><label for="exp-e${e.id}">${e.nombre}</label></div>`
+  ).join('');
+  document.getElementById('exportPanel').classList.add('open');
+}
+function closeExport() { document.getElementById('exportPanel').classList.remove('open'); }
+document.getElementById('exportPanel').addEventListener('click', e => { if (e.target === e.currentTarget) closeExport(); });
+
+function selFmt(f) {
+  selectedFmt = f;
+  ['xlsx','pdf','csv'].forEach(x => document.getElementById('fmt-'+x).classList.toggle('sel', x === f));
+}
+
+function doExport() {
+  const cur = document.querySelector('input[name="exp-cur"]:checked').value;
+  const incEERR = document.getElementById('exp-eerr').checked;
+  const incBal  = document.getElementById('exp-bal').checked;
+  const incKPI  = document.getElementById('exp-kpi').checked;
+  const incOp   = document.getElementById('exp-op').checked;
+  const empIds  = DB.empresas.filter(e => document.getElementById('exp-e'+e.id)?.checked).map(e => e.id);
+  const emps    = DB.empresas.filter(e => empIds.includes(e.id));
+  if (selectedFmt === 'csv') exportCSV(emps, cur, incEERR, incOp);
+  else if (selectedFmt === 'xlsx') exportXLSX(emps, cur, incEERR, incBal, incKPI, incOp);
+  else if (selectedFmt === 'pdf') exportPDF(emps, cur);
+  closeExport();
+}
+
+function fmtExport(v, tc, cur) { return Math.round(cur === 'USD' ? v / tc : v); }
+
+function exportCSV(emps, cur, incEERR, incOp) {
+  let rows = [];
+  emps.forEach(e => {
+    if (incEERR) {
+      rows.push([e.nombre,'EERR','Período','TC','Ventas','Costo Variable','Costo Fijo','Otros','Margen Bruto','EBIT','Moneda'].join(','));
+      e.periodos.forEach(p => {
+        const mb = p.ventas-p.cv, ebit = mb-p.cf+p.otros;
+        rows.push([e.nombre,'EERR',p.label,p.tc,fmtExport(p.ventas,p.tc,cur),fmtExport(p.cv,p.tc,cur),fmtExport(p.cf,p.tc,cur),fmtExport(p.otros,p.tc,cur),fmtExport(mb,p.tc,cur),fmtExport(ebit,p.tc,cur),cur].join(','));
+      });
+    }
+    if (incOp) {
+      rows.push([e.nombre,'TAREAS','Descripción','Prioridad','Fecha','Estado'].join(','));
+      e.tareas.forEach(t => rows.push([e.nombre,'TAREAS',`"${t.texto}"`,t.prioridad,t.fecha,t.done?'Completada':'Pendiente'].join(',')));
+    }
+  });
+  const blob = new Blob([rows.join('\n')], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `panel_direccion_${cur}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+function exportXLSX(emps, cur, incEERR, incBal, incKPI, incOp) {
+  const wb = XLSX.utils.book_new();
+  emps.forEach(e => {
+    if (incEERR && e.periodos.length) {
+      const rows = [['Período','TC $/USD','Ventas','Costo Variable','Costo Fijo','Otros Ing.','Margen Bruto','EBIT','Margen Bruto %','Margen EBIT %',`Moneda: ${cur}`]];
+      e.periodos.forEach(p => { const mb=p.ventas-p.cv,ebit=mb-p.cf+p.otros; rows.push([p.label,p.tc,fmtExport(p.ventas,p.tc,cur),fmtExport(p.cv,p.tc,cur),fmtExport(p.cf,p.tc,cur),fmtExport(p.otros,p.tc,cur),fmtExport(mb,p.tc,cur),fmtExport(ebit,p.tc,cur),(mb/p.ventas*100).toFixed(1)+'%',(ebit/p.ventas*100).toFixed(1)+'%',cur]); });
+      const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = rows[0].map(()=>({wch:16}));
+      XLSX.utils.book_append_sheet(wb, ws, (e.nombre+' EERR').slice(0,31));
+    }
+    if (incBal && e.periodos.length) {
+      const rows = [['Período','TC','Caja','Créditos','Inventario','Bienes Uso','Act.Total','Deudas Com','Deuda FinCP','Deuda FinLP','Pas.Total','PN',`Moneda: ${cur}`]];
+      e.periodos.forEach(p => { const acT=p.caja+p.cred+p.inv+p.bu,pasT=p.dc+p.dfcp+p.dflp; rows.push([p.label,p.tc,fmtExport(p.caja,p.tc,cur),fmtExport(p.cred,p.tc,cur),fmtExport(p.inv,p.tc,cur),fmtExport(p.bu,p.tc,cur),fmtExport(acT,p.tc,cur),fmtExport(p.dc,p.tc,cur),fmtExport(p.dfcp,p.tc,cur),fmtExport(p.dflp,p.tc,cur),fmtExport(pasT,p.tc,cur),fmtExport(p.pn,p.tc,cur),cur]); });
+      const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = rows[0].map(()=>({wch:14}));
+      XLSX.utils.book_append_sheet(wb, ws, (e.nombre+' Balance').slice(0,31));
+    }
+    if (incKPI && e.periodos.length) {
+      const rows = [['Período','Margen Bruto %','Margen EBIT %','Liquidez Cte','Liquidez Ácida','Endeudamiento %','Deuda/EBIT']];
+      e.periodos.forEach(p => { const mb=p.ventas-p.cv,ebit=mb-p.cf+p.otros,acCC=p.caja+p.cred+p.inv,pasCC=p.dc+p.dfcp,dT=p.dc+p.dfcp+p.dflp; rows.push([p.label,(mb/p.ventas*100).toFixed(1)+'%',(ebit/p.ventas*100).toFixed(1)+'%',(acCC/pasCC).toFixed(2),((p.caja+p.cred)/pasCC).toFixed(2),(dT/p.pn*100).toFixed(1)+'%',ebit>0?(dT/ebit).toFixed(1)+'x':'—']); });
+      const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = rows[0].map(()=>({wch:16}));
+      XLSX.utils.book_append_sheet(wb, ws, (e.nombre+' KPIs').slice(0,31));
+    }
+    if (incOp) {
+      const rows = [['Directivos','','',''],['Nombre','Cargo','Celular','Email']];
+      e.directivos.forEach(d => rows.push([d.nombre,d.cargo,d.cel,d.mail]));
+      rows.push([],['Tareas','Prioridad','Fecha','Estado']);
+      e.tareas.forEach(t => rows.push([t.texto,t.prioridad,t.fecha,t.done?'Completada':'Pendiente']));
+      rows.push([],['Proyectos','Inicio (mes)','Duración (meses)','Avance %']);
+      e.proyectos.forEach(p => rows.push([p.nombre,p.inicio,p.duracion,p.avance+'%']));
+      const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{wch:32},{wch:20},{wch:16},{wch:32}];
+      XLSX.utils.book_append_sheet(wb, ws, (e.nombre+' Operativo').slice(0,31));
+    }
+  });
+  XLSX.writeFile(wb, `panel_direccion_${cur}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportPDF(emps, cur) {
+  const w = window.open('', '_blank');
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Panel de Dirección</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a18;margin:2cm}h1{font-size:18px;margin-bottom:4px;color:#1D9E75}h2{font-size:14px;margin:20px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;color:#444}h3{font-size:12px;margin:12px 0 6px;color:#666;text-transform:uppercase;letter-spacing:.05em}table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:11px}th{background:#f5f5f3;text-align:left;padding:5px 8px;border:0.5px solid #ddd;font-weight:600}td{padding:5px 8px;border:0.5px solid #eee}td:not(:first-child){text-align:right}.tot td{font-weight:600;color:#1D9E75}.sub td{font-weight:500;background:#fafaf8}.badge{display:inline-block;padding:1px 6px;border-radius:99px;font-size:10px}.alta{background:#FCEBEB;color:#a32d2d}.media{background:#FAEEDA;color:#BA7517}.baja{background:#E1F5EE;color:#0F6E56}.meta{font-size:10px;color:#888;margin-bottom:4px}@media print{body{margin:1cm}}</style></head><body>`;
+  html += `<h1>Panel de Dirección</h1><p class="meta">Exportado el ${new Date().toLocaleDateString('es-AR')} · Moneda: ${cur}</p>`;
+  emps.forEach(e => {
+    html += `<h2>${e.nombre} — ${e.rubro}</h2><p class="meta">CUIT: ${e.cuit} · ${e.domicilio} · ${e.mail}</p>`;
+    if (e.directivos.length) { html += `<h3>Directivos</h3><table><tr><th>Nombre</th><th>Cargo</th><th>Celular</th><th>Email</th></tr>`; e.directivos.forEach(d => html += `<tr><td>${d.nombre}</td><td>${d.cargo}</td><td>${d.cel}</td><td>${d.mail}</td></tr>`); html += '</table>'; }
+    if (e.periodos.length) {
+      const last = e.periodos[e.periodos.length-1]; const tc=last.tc; const mb=last.ventas-last.cv,ebit=mb-last.cf+last.otros;
+      html += `<h3>EERR — último período: ${last.label}${cur==='USD'?' (TC '+tc+')':''}</h3><table><tr><th>Concepto</th><th>${cur==='USD'?'U$S':'ARS'}</th></tr><tr class="sub"><td>Ventas netas</td><td>${fmtExport(last.ventas,tc,cur).toLocaleString('es-AR')}</td></tr><tr><td>— Costos variables</td><td>${fmtExport(last.cv,tc,cur).toLocaleString('es-AR')}</td></tr><tr class="sub"><td>Margen de contribución</td><td>${fmtExport(mb,tc,cur).toLocaleString('es-AR')}</td></tr><tr><td>— Costos fijos</td><td>${fmtExport(last.cf,tc,cur).toLocaleString('es-AR')}</td></tr><tr class="tot"><td>EBIT</td><td>${fmtExport(ebit,tc,cur).toLocaleString('es-AR')}</td></tr></table>`;
+    }
+    if (e.tareas.filter(t=>!t.done).length) { html += `<h3>Tareas pendientes</h3><table><tr><th>Tarea</th><th>Prioridad</th><th>Fecha</th></tr>`; e.tareas.filter(t=>!t.done).forEach(t => html += `<tr><td>${t.texto}</td><td><span class="badge ${t.prioridad}">${t.prioridad}</span></td><td>${t.fecha}</td></tr>`); html += '</table>'; }
+  });
+  html += `<script>window.onload=()=>window.print()<\/script></body></html>`;
+  w.document.write(html); w.document.close();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+load();
+</script>
+</body>
+</html>
