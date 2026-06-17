@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ANDRA PANEL</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css"/>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
   --teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#0F6E56;
@@ -98,6 +99,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-activo{background:var(--teal-lt);color:var(--teal-dk);}
 .badge-pausado{background:var(--amber-lt);color:var(--amber);}
 .badge-cerrado{background:var(--bg3);color:var(--text3);}
+/* GCAL BUTTON */
+.btn-gcal{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg);cursor:pointer;color:var(--text3);transition:all .12s;font-size:15px;}
+.btn-gcal:hover{background:var(--bg2);color:var(--text);}
+.btn-gcal.gcal-enviado{background:#E8F5E9;border-color:#4CAF50;color:#2E7D32;}
+.btn-gcal.gcal-loading{opacity:0.5;cursor:not-allowed;}
 .badge-holding{background:var(--purple-lt);color:var(--purple);}
 .badge-usd{background:var(--blue-lt);color:var(--blue);}
 .badge-ars{background:var(--teal-lt);color:var(--teal-dk);}
@@ -286,6 +292,14 @@ textarea{resize:vertical;min-height:80px;}
       </div>
     </div>
 
+
+    <!-- u2550u2550 FICHA EMPRESA u2550u2550 -->
+    <div class="pg page" id="pg-ficha-empresa" style="display:none">
+      <div style="margin-bottom:12px">
+        <button class="btn btn-sm" onclick="renderPage('empresas')"><i class="ti ti-arrow-left"></i> Volver a Empresas</button>
+      </div>
+      <div id="ficha-empresa-content"></div>
+    </div>
     <!-- ══ TAREAS ══ -->
     <div class="pg page" id="pg-tareas" style="display:none">
       <div class="filter-bar">
@@ -392,7 +406,11 @@ textarea{resize:vertical;min-height:80px;}
     <div class="pg page" id="pg-eerr" style="display:none">
       <div class="filter-bar">
         <span class="filter-label">Empresa:</span>
-        <select id="sel-eerr-emp" onchange="loadPeriodosEERR()"><option value="">— seleccionar —</option></select>
+        <select id="sel-eerr-emp" onchange="onCambioEmpresaFin('eerr')"><option value="">— seleccionar empresa —</option></select>
+        <div id="chk-cons-eerr" style="display:none;align-items:center;gap:6px;margin-left:8px">
+          <input type="checkbox" id="consolidar-eerr" onchange="loadPeriodosEERR()" style="cursor:pointer"/>
+          <label for="consolidar-eerr" style="font-size:12px;color:var(--text2);cursor:pointer">Consolidado con subsidiarias</label>
+        </div>
         <div class="filter-sep"></div>
         <span class="filter-label">Período:</span>
         <select id="sel-p1" onchange="renderEERR()"></select>
@@ -408,7 +426,11 @@ textarea{resize:vertical;min-height:80px;}
     <div class="pg page" id="pg-balance" style="display:none">
       <div class="filter-bar">
         <span class="filter-label">Empresa:</span>
-        <select id="sel-bal-emp" onchange="loadPeriodosBalance()"><option value="">— seleccionar —</option></select>
+        <select id="sel-bal-emp" onchange="onCambioEmpresaFin('balance')"><option value="">— seleccionar empresa —</option></select>
+        <div id="chk-cons-balance" style="display:none;align-items:center;gap:6px;margin-left:8px">
+          <input type="checkbox" id="consolidar-balance" onchange="loadPeriodosBalance()" style="cursor:pointer"/>
+          <label for="consolidar-balance" style="font-size:12px;color:var(--text2);cursor:pointer">Consolidado con subsidiarias</label>
+        </div>
         <div class="filter-sep"></div>
         <span class="filter-label">Período:</span>
         <select id="sel-bal" onchange="renderBalance()"></select>
@@ -423,7 +445,11 @@ textarea{resize:vertical;min-height:80px;}
     <div class="pg page" id="pg-kpis" style="display:none">
       <div class="filter-bar">
         <span class="filter-label">Empresa:</span>
-        <select id="sel-kpi-emp" onchange="loadPeriodosKPI()"><option value="">— seleccionar —</option></select>
+        <select id="sel-kpi-emp" onchange="onCambioEmpresaFin('kpis')"><option value="">— seleccionar empresa —</option></select>
+        <div id="chk-cons-kpis" style="display:none;align-items:center;gap:6px;margin-left:8px">
+          <input type="checkbox" id="consolidar-kpis" onchange="loadPeriodosKPI()" style="cursor:pointer"/>
+          <label for="consolidar-kpis" style="font-size:12px;color:var(--text2);cursor:pointer">Consolidado con subsidiarias</label>
+        </div>
         <div class="filter-sep"></div>
         <span class="filter-label">Período:</span>
         <select id="sel-kpi" onchange="renderKPIs()"></select>
@@ -458,12 +484,14 @@ textarea{resize:vertical;min-height:80px;}
           <div class="form-group"><label class="fl">Costos variables</label><input type="number" id="f-cv" placeholder="0"/></div>
           <div class="form-group"><label class="fl">Costos fijos</label><input type="number" id="f-cf" placeholder="0"/></div>
           <div class="form-group"><label class="fl">Otros ingresos</label><input type="number" id="f-otros" placeholder="0"/></div>
+          <div class="form-group"><label class="fl">Resultado financiero (+ ganancia / - pérdida)</label><input type="number" id="f-rdo-fin" placeholder="0"/></div>
+          <div class="form-group"><label class="fl">IIGG (valor positivo)</label><input type="number" id="f-iigg" placeholder="0"/></div>
         </div>
         <div class="card-title" style="margin-bottom:.5rem">Balance</div>
         <div class="form-grid" style="margin-bottom:1rem">
           <div class="form-group"><label class="fl">Caja y bancos</label><input type="number" id="f-caja" placeholder="0"/></div>
           <div class="form-group"><label class="fl">Créditos ventas</label><input type="number" id="f-cred" placeholder="0"/></div>
-          <div class="form-group"><label class="fl">Inventarios</label><input type="number" id="f-inv" placeholder="0"/></div>
+          <div class="form-group"><label class="fl">Bs de Cambio</label><input type="number" id="f-inv" placeholder="0"/></div>
           <div class="form-group"><label class="fl">Bienes de uso</label><input type="number" id="f-bu" placeholder="0"/></div>
           <div class="form-group"><label class="fl">Deudas comerciales</label><input type="number" id="f-dc" placeholder="0"/></div>
           <div class="form-group"><label class="fl">Deuda fin. CP</label><input type="number" id="f-dfcp" placeholder="0"/></div>
@@ -550,6 +578,65 @@ function doLogout(){
 checkSession();
 
 // ═══════════════════════════════════
+// GOOGLE CALENDAR
+// ═══════════════════════════════════
+const GCAL_CLIENT_ID='210892137089-5dbi1s6njrlaoed8pkjksrgu9shrli5j.apps.googleusercontent.com';
+const GCAL_SCOPE='https://www.googleapis.com/auth/calendar.events';
+let gcalToken=null;
+
+function gcalGetToken(callback){
+  if(gcalToken){callback();return;}
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:GCAL_CLIENT_ID,
+    scope:GCAL_SCOPE,
+    callback:(resp)=>{
+      if(resp.error){alert('Error al conectar con Google Calendar: '+resp.error);return;}
+      gcalToken=resp.access_token;
+      callback();
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function gcalEnviarTarea(tareaId){
+  const t=STATE.tareas.find(x=>x.id===tareaId);
+  if(!t){alert('Tarea no encontrada.');return;}
+  if(!t.fecha_fin){alert('Esta tarea no tiene fecha límite. Agregá una fecha límite para enviarla al calendario.');return;}
+
+  const btn=document.getElementById('gcal-btn-'+tareaId);
+  if(btn){btn.classList.add('gcal-loading');btn.disabled=true;}
+
+  gcalGetToken(async()=>{
+    try{
+      const empresa=empNombre(t.empresa_id);
+      const fechaISO=t.fecha_fin; // YYYY-MM-DD
+      const startDT=fechaISO+'T09:00:00';
+      const endDT=fechaISO+'T10:00:00';
+      const evento={
+        summary:`[${empresa}] ${t.descripcion||'Tarea sin descripción'}`,
+        description:`Empresa: ${empresa}\nTarea: ${t.descripcion||''}\nEstado: ${t.estado||'pendiente'}`,
+        start:{dateTime:startDT,timeZone:'America/Argentina/Buenos_Aires'},
+        end:{dateTime:endDT,timeZone:'America/Argentina/Buenos_Aires'},
+        reminders:{useDefault:false,overrides:[{method:'popup',minutes:1440}]}
+      };
+      const resp=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+gcalToken,'Content-Type':'application/json'},
+        body:JSON.stringify(evento)
+      });
+      if(!resp.ok){const err=await resp.json();throw new Error(err.error?.message||'Error Google Calendar');}
+      // Guardar estado en Supabase
+      await db.patch('tareas',tareaId,{calendario_google:true});
+      STATE.tareas=STATE.tareas.map(x=>x.id===tareaId?{...x,calendario_google:true}:x);
+      if(btn){btn.classList.remove('gcal-loading');btn.classList.add('gcal-enviado');btn.disabled=false;btn.title='Ya en Google Calendar';btn.innerHTML='<i class="ti ti-calendar-check"></i>';}
+    }catch(e){
+      if(btn){btn.classList.remove('gcal-loading');btn.disabled=false;}
+      alert('Error al crear evento: '+e.message);
+    }
+  });
+}
+
+// ═══════════════════════════════════
 // SUPABASE
 // ═══════════════════════════════════
 const SB_URL='https://ydqasdmvpjlqefqqursu.supabase.co';
@@ -613,12 +700,20 @@ function syncStatus(s){
 
 function populateFiltros(){
   const emps=STATE.empresas;
-  ['f-tar-empresa','f-not-empresa','f-proy-empresa','sel-eerr-emp','sel-bal-emp','sel-kpi-emp','c-empresa'].forEach(id=>{
+  // Selectores operativos: incluyen "Todas"
+  ['f-tar-empresa','f-not-empresa','f-proy-empresa'].forEach(id=>{
     const el=document.getElementById(id);
     if(!el)return;
     const val=el.value;
-    const placeholder=id==='c-empresa'?'<option value="">— seleccionar —</option>':'<option value="">Todas</option>';
-    el.innerHTML=placeholder+emps.map(e=>`<option value="${e.id}">${e.nombre}${e.es_holding?' 🏢':''}</option>`).join('');
+    el.innerHTML='<option value="">Todas</option>'+emps.map(e=>`<option value="${e.id}">${e.nombre}${e.es_holding?' 🏢':''}</option>`).join('');
+    if(val)el.value=val;
+  });
+  // Selectores financieros: sin "Todas", solo empresa específica
+  ['sel-eerr-emp','sel-bal-emp','sel-kpi-emp','c-empresa'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const val=el.value;
+    el.innerHTML='<option value="">— seleccionar empresa —</option>'+emps.map(e=>`<option value="${e.id}">${e.nombre}${e.es_holding?' 🏢':''}</option>`).join('');
     if(val)el.value=val;
   });
 }
@@ -668,22 +763,41 @@ function renderEmpresas(){
   if(filtro==='subsidiaria')emps=emps.filter(e=>e.holding_id);
   const el=document.getElementById('emp-list');
   if(!emps.length){el.innerHTML='<p class="muted" style="padding:.5rem 0;color:var(--text3)">No hay empresas. Creá la primera.</p>';return;}
+
+  // Ordenamiento jerárquico: holdings A→Z, subsidiarias debajo A→Z, sin holding al final A→Z
+  const holdings=emps.filter(e=>e.es_holding).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  const sinHolding=emps.filter(e=>!e.es_holding&&!e.holding_id).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  const filas=[];
+  holdings.forEach(h=>{
+    filas.push({...h,_esHolding:true});
+    const subs=emps.filter(e=>e.holding_id==h.id).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+    subs.forEach(s=>filas.push({...s,_esHolding:false,_sub:true}));
+  });
+  sinHolding.forEach(e=>filas.push({...e,_esHolding:false,_sub:false}));
+
+  const btnAcciones=(e)=>`
+    <button class="btn btn-sm btn-primary" onclick="abrirFichaEmpresa(${e.id})" title="Ver ficha"><i class="ti ti-eye"></i> Ver</button>
+    <button class="btn btn-sm" onclick="editEmpresa(${e.id})" title="Editar"><i class="ti ti-pencil"></i></button>
+    <button class="btn btn-sm btn-danger" onclick="delEmpresa(${e.id})" title="Eliminar"><i class="ti ti-trash"></i></button>`;
+
   el.innerHTML=`<table class="data-table">
-    <thead><tr><th>Nombre</th><th>Rubro</th><th>CUIT</th><th>Holding</th><th>Responsable</th><th>Tipo</th><th></th></tr></thead>
-    <tbody>${emps.map(e=>{
-      const holding=e.holding_id?empNombre(e.holding_id):'—';
-      const tipo=e.es_holding?'<span class="badge badge-holding">Holding</span>':'<span class="badge" style="background:var(--bg2);color:var(--text3)">Empresa</span>';
-      return`<tr>
-        <td><strong>${e.nombre}</strong>${e.domicilio?`<div class="muted">${e.domicilio}</div>`:''}</td>
+    <thead><tr><th>Nombre</th><th>Rubro</th><th>CUIT</th><th>Responsable</th><th>Tipo</th><th></th></tr></thead>
+    <tbody>${filas.map(e=>{
+      const tipo=e._esHolding
+        ?'<span class="badge badge-holding">Holding</span>'
+        :'<span class="badge" style="background:var(--bg2);color:var(--text3)">Empresa</span>';
+      const indent=e._sub?'padding-left:18px;border-left:3px solid var(--teal);margin-left:4px':'';
+      const nombre=e._esHolding
+        ?`<strong style="font-size:14px">${e.nombre}</strong>`
+        :`<span style="${indent};display:block">${e.nombre}</span>`;
+      const bgRow=e._esHolding?'background:var(--bg2)':'';
+      return`<tr style="${bgRow}">
+        <td style="padding-left:${e._sub?'24px':'12px'}">${nombre}${e.domicilio&&e._esHolding?`<div class="muted" style="font-size:11px">${e.domicilio}</div>`:''}</td>
         <td class="muted">${e.rubro||'—'}</td>
         <td class="muted">${e.cuit||'—'}</td>
-        <td class="muted">${holding}</td>
-        <td class="muted">${e.responsable||'—'}<br><span style="font-size:11px">${e.mail||''}</span></td>
+        <td class="muted">${e.responsable||'—'}${e.mail?`<br><span style="font-size:11px">${e.mail}</span>`:''}</td>
         <td>${tipo}</td>
-        <td style="white-space:nowrap">
-          <button class="btn btn-sm" onclick="editEmpresa(${e.id})" title="Editar"><i class="ti ti-pencil"></i></button>
-          <button class="btn btn-sm btn-danger" onclick="delEmpresa(${e.id})" title="Eliminar"><i class="ti ti-trash"></i></button>
-        </td>
+        <td style="white-space:nowrap">${btnAcciones(e)}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
@@ -698,6 +812,137 @@ async function delEmpresa(id){
 function editEmpresa(id){
   const e=STATE.empresas.find(x=>x.id===id);
   if(e)openModal('empresa',e);
+}
+
+
+// ═══════════════════════════════════
+// FICHA EMPRESA
+// ═══════════════════════════════════
+function abrirFichaEmpresa(id){
+  document.querySelectorAll('.pg').forEach(p=>p.style.display='none');
+  document.getElementById('pg-ficha-empresa').style.display='block';
+  document.getElementById('topTitle').textContent='Ficha de Empresa';
+  renderFichaEmpresa(id);
+}
+
+function renderFichaEmpresa(id){
+  const e=STATE.empresas.find(x=>x.id==id);
+  if(!e)return;
+  const el=document.getElementById('ficha-empresa-content');
+
+  // Datos de cada módulo filtrados por esta empresa
+  const tareas=STATE.tareas.filter(t=>t.empresa_id==id);
+  const notas=STATE.notas.filter(n=>n.empresa_id==id);
+  const proyectos=STATE.proyectos.filter(p=>p.empresa_id==id);
+  const directivos=STATE.directivos.filter(d=>d.empresa_id==id);
+
+  const colors={'pendiente':'var(--amber)','en-curso':'var(--blue)','completada':'var(--teal)','cancelada':'var(--text3)'};
+
+  // Sección directivos
+  const dirHTML=directivos.length
+    ?`<table class="data-table"><thead><tr><th>Nombre</th><th>Cargo</th><th>Celular</th><th>Mail</th></tr></thead><tbody>
+      ${directivos.map(d=>`<tr>
+        <td><strong>${d.nombre||'—'}</strong></td>
+        <td class="muted">${d.cargo||'—'}</td>
+        <td class="muted">${d.celular?`<a href="tel:${d.celular}">${d.celular}</a>`:'—'}</td>
+        <td class="muted">${d.mail?`<a href="mailto:${d.mail}">${d.mail}</a>`:'—'}</td>
+      </tr>`).join('')}</tbody></table>`
+    :'<p class="muted" style="color:var(--text3)">Sin directivos registrados.</p>';
+
+  // Sección tareas
+  const tarHTML=tareas.length
+    ?`<table class="data-table"><thead><tr><th>Descripción</th><th>Responsable</th><th>Inicio</th><th>Vence</th><th>Estado</th></tr></thead><tbody>
+      ${tareas.map(t=>`<tr>
+        <td>${t.descripcion||'—'}</td>
+        <td class="muted">${t.responsable||'—'}</td>
+        <td class="muted">${t.fecha_inicio||'—'}</td>
+        <td class="muted">${t.fecha_fin||'—'}</td>
+        <td>${badgeEstado(t.estado)}</td>
+      </tr>`).join('')}</tbody></table>`
+    :'<p class="muted" style="color:var(--text3)">Sin tareas registradas.</p>';
+
+  // Sección proyectos
+  const proyHTML=proyectos.length
+    ?`<table class="data-table"><thead><tr><th>Proyecto</th><th>Estado</th><th>Inicio</th><th>Fin</th><th>Presupuesto</th><th>Avance</th></tr></thead><tbody>
+      ${proyectos.map(p=>{
+        const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
+        const avance=certs.length?Math.max(...certs.map(c=>c.avance_fisico)):0;
+        return`<tr>
+          <td><strong>${p.nombre||'—'}</strong><div class="muted" style="font-size:11px">${p.detalle||''}</div></td>
+          <td>${badgeEstado(p.estado)}</td>
+          <td class="muted">${p.fecha_inicio||'—'}</td>
+          <td class="muted">${p.fecha_fin||'—'}</td>
+          <td class="muted">${fmtPeso(p.presupuesto)} ${p.moneda||''}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="flex:1;background:var(--bg2);border-radius:3px;height:8px;min-width:60px">
+                <div style="width:${avance}%;height:100%;background:var(--teal);border-radius:3px"></div>
+              </div>
+              <span style="font-size:11px;color:var(--text2)">${avance}%</span>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}</tbody></table>`
+    :'<p class="muted" style="color:var(--text3)">Sin proyectos registrados.</p>';
+
+  // Sección notas
+  const notHTML=notas.length
+    ?notas.sort((a,b)=>b.fecha_input?.localeCompare(a.fecha_input||'')).map(n=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${n.fecha_input||''}${n.tema?` · <span style="color:var(--teal)">${n.tema}</span>`:''}</div>
+        <div style="font-size:13px;color:var(--text1)">${n.texto||''}</div>
+      </div>`).join('')
+    :'<p class="muted" style="color:var(--text3)">Sin notas registradas.</p>';
+
+  const holding=e.holding_id?`<span style="font-size:12px;color:var(--text3)"> · Holding: ${empNombre(e.holding_id)}</span>`:'';
+  const tipo=e.es_holding?'<span class="badge badge-holding">Holding</span>':'<span class="badge" style="background:var(--bg2);color:var(--text3)">Empresa</span>';
+
+  el.innerHTML=`
+    <!-- Encabezado -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h2 style="margin:0;font-size:20px">${e.nombre}</h2>
+            ${tipo}${holding}
+          </div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px">
+            ${e.rubro?`<span style="font-size:12px;color:var(--text3)"><i class="ti ti-tag"></i> ${e.rubro}</span>`:''}
+            ${e.cuit?`<span style="font-size:12px;color:var(--text3)"><i class="ti ti-id-badge"></i> CUIT: ${e.cuit}</span>`:''}
+            ${e.domicilio?`<span style="font-size:12px;color:var(--text3)"><i class="ti ti-map-pin"></i> ${e.domicilio}</span>`:''}
+            ${e.mail?`<span style="font-size:12px;color:var(--text3)"><i class="ti ti-mail"></i> ${e.mail}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="editEmpresa(${e.id});"><i class="ti ti-pencil"></i> Editar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Directivos -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title"><i class="ti ti-users"></i> Directivos <span style="font-size:12px;color:var(--text3);font-weight:400">(${directivos.length})</span></div></div>
+      ${dirHTML}
+    </div>
+
+    <!-- Tareas -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title"><i class="ti ti-checkbox"></i> Tareas <span style="font-size:12px;color:var(--text3);font-weight:400">(${tareas.length})</span></div></div>
+      ${tarHTML}
+    </div>
+
+    <!-- Proyectos -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title"><i class="ti ti-briefcase"></i> Proyectos <span style="font-size:12px;color:var(--text3);font-weight:400">(${proyectos.length})</span></div></div>
+      ${proyHTML}
+    </div>
+
+    <!-- Notas -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title"><i class="ti ti-notes"></i> Notas <span style="font-size:12px;color:var(--text3);font-weight:400">(${notas.length})</span></div></div>
+      ${notHTML}
+    </div>
+  `;
 }
 
 // ═══════════════════════════════════
@@ -723,19 +968,27 @@ function renderTareasTabla(tar){
   const el=document.getElementById('tar-tabla');
   if(!tar.length){el.innerHTML='<p style="color:var(--text3);padding:.5rem 0">No hay tareas que coincidan.</p>';return;}
   el.innerHTML=`<table class="data-table">
-    <thead><tr><th>Empresa</th><th>Descripción</th><th>Responsable</th><th>Inicio</th><th>Vence</th><th>Estado</th><th></th></tr></thead>
-    <tbody>${tar.map(t=>`<tr>
+    <thead><tr><th>Empresa</th><th>Descripción</th><th>Responsable</th><th>Inicio</th><th>Vence</th><th>Estado</th><th title="Google Calendar">GCal</th><th></th></tr></thead>
+    <tbody>${tar.map(t=>{
+      const gcalEnviado=t.calendario_google===true;
+      const gcalClass=gcalEnviado?'btn-gcal gcal-enviado':'btn-gcal';
+      const gcalTitle=gcalEnviado?'Ya en Google Calendar':'Enviar al Google Calendar';
+      const gcalIcon=gcalEnviado?'ti-calendar-check':'ti-calendar-plus';
+      return`<tr>
       <td class="muted">${empNombre(t.empresa_id)}</td>
       <td>${t.descripcion||'—'}</td>
       <td class="muted">${t.responsable||'—'}</td>
       <td class="muted">${t.fecha_inicio||'—'}</td>
       <td class="muted">${t.fecha_fin||'—'}</td>
       <td>${badgeEstado(t.estado)}</td>
+      <td style="text-align:center">
+        <button id="gcal-btn-${t.id}" class="${gcalClass}" title="${gcalTitle}" onclick="gcalEnviarTarea(${t.id})" ${gcalEnviado?'disabled':''}><i class="ti ${gcalIcon}"></i></button>
+      </td>
       <td style="white-space:nowrap">
         <button class="btn btn-sm" onclick="editTarea(${t.id})"><i class="ti ti-pencil"></i></button>
         <button class="btn btn-sm btn-danger" onclick="delTarea(${t.id})"><i class="ti ti-trash"></i></button>
       </td>
-    </tr>`).join('')}</tbody>
+    </tr>`;}).join('')}</tbody>
   </table>`;
 }
 
@@ -745,33 +998,70 @@ function renderTareasTiempo(tar){
   const el=document.getElementById('tar-tiempo');
   if(!tar.length){el.innerHTML='<p style="color:var(--text3);padding:.5rem 0">No hay tareas que coincidan.</p>';return;}
   const conFechas=tar.filter(t=>t.fecha_inicio&&t.fecha_fin);
-  if(!conFechas.length){el.innerHTML='<p style="color:var(--text3);padding:.5rem 0">Las tareas no tienen fechas asignadas para mostrar en línea de tiempo.</p>';return;}
-  const fechas=conFechas.flatMap(t=>[new Date(t.fecha_inicio),new Date(t.fecha_fin)]);
-  const minD=new Date(Math.min(...fechas));
-  const maxD=new Date(Math.max(...fechas));
-  const totalDias=(maxD-minD)/86400000||1;
+  const sinFechas=tar.filter(t=>!(t.fecha_inicio&&t.fecha_fin));
   const colors={'pendiente':'var(--amber)','en-curso':'var(--blue)','completada':'var(--teal)','cancelada':'var(--text3)'};
-  el.innerHTML=`<div style="min-width:600px">
-    ${conFechas.map(t=>{
-      const ini=(new Date(t.fecha_inicio)-minD)/86400000;
-      const dur=(new Date(t.fecha_fin)-new Date(t.fecha_inicio))/86400000+1;
-      const left=(ini/totalDias*100).toFixed(1);
-      const width=Math.max((dur/totalDias*100),2).toFixed(1);
-      const color=colors[t.estado]||'var(--teal)';
-      return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <div style="width:160px;font-size:12px;color:var(--text2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${empNombre(t.empresa_id)}</div>
-        <div style="flex:1;background:var(--bg2);border-radius:4px;height:28px;position:relative;">
-          <div style="position:absolute;left:${left}%;width:${width}%;height:100%;background:${color};border-radius:4px;display:flex;align-items:center;padding:0 6px;min-width:4px">
-            <span style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.descripcion||''}</span>
-          </div>
+
+  let timelineHTML='';
+  if(!conFechas.length){
+    timelineHTML='<p style="color:var(--text3);padding:.5rem 0">No hay tareas con fechas completas para mostrar en línea de tiempo.</p>';
+  } else {
+    const fechas=conFechas.flatMap(t=>[new Date(t.fecha_inicio),new Date(t.fecha_fin)]);
+    const minD=new Date(Math.min(...fechas));
+    const maxD=new Date(Math.max(...fechas));
+    const totalDias=(maxD-minD)/86400000||1;
+    const numMarcas=Math.min(totalDias+1,8);
+    const paso=totalDias/(numMarcas-1||1);
+    const marcas=Array.from({length:numMarcas},(_,i)=>{
+      const d=new Date(minD.getTime()+Math.round(i*paso)*86400000);
+      const pct=(Math.round(i*paso)/totalDias*100).toFixed(1);
+      return{pct,label:`${d.getDate()}/${d.getMonth()+1}`};
+    });
+    timelineHTML=`<div style="min-width:600px">
+      <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:4px">
+        <div style="width:160px;flex-shrink:0"></div>
+        <div style="flex:1;position:relative;height:20px;">
+          ${marcas.map(m=>`<div style="position:absolute;left:${m.pct}%;transform:translateX(-50%);font-size:10px;color:var(--text3);white-space:nowrap;">${m.label}</div>`).join('')}
         </div>
-        <div style="width:80px;font-size:11px;color:var(--text3)">${t.fecha_fin||''}</div>
-      </div>`;
-    }).join('')}
-    <div style="font-size:11px;color:var(--text3);padding-top:4px;padding-left:170px">
-      ${minD.toLocaleDateString('es-AR')} → ${maxD.toLocaleDateString('es-AR')}
-    </div>
-  </div>`;
+        <div style="width:80px;flex-shrink:0"></div>
+      </div>
+      ${conFechas.map(t=>{
+        const ini=(new Date(t.fecha_inicio)-minD)/86400000;
+        const dur=(new Date(t.fecha_fin)-new Date(t.fecha_inicio))/86400000+1;
+        const left=(ini/totalDias*100).toFixed(1);
+        const width=Math.max((dur/totalDias*100),2).toFixed(1);
+        const color=colors[t.estado]||'var(--teal)';
+        const marcasLines=marcas.map(m=>`<div style="position:absolute;left:${m.pct}%;top:0;height:100%;width:1px;background:var(--border2);opacity:0.6"></div>`).join('');
+        return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:160px;flex-shrink:0;font-size:12px;color:var(--text2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${empNombre(t.empresa_id)}</div>
+          <div style="flex:1;background:var(--bg2);border-radius:4px;height:28px;position:relative;">
+            ${marcasLines}
+            <div style="position:absolute;left:${left}%;width:${width}%;height:100%;background:${color};border-radius:4px;display:flex;align-items:center;padding:0 6px;min-width:6px;z-index:1">
+              <span style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.descripcion||''}</span>
+            </div>
+          </div>
+          <div style="width:80px;flex-shrink:0;font-size:11px;color:var(--text3)">${t.fecha_fin||''}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  let sinFechasHTML='';
+  if(sinFechas.length){
+    sinFechasHTML=`<div style="margin-top:16px;border-top:1px solid var(--border2);padding-top:12px">
+      <div style="font-size:11px;color:var(--amber);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-alert-triangle"></i> Sin fecha de inicio — no graficables (${sinFechas.length})
+      </div>
+      ${sinFechas.map(t=>`
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;opacity:0.75">
+          <div style="width:160px;font-size:12px;color:var(--text2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${empNombre(t.empresa_id)}</div>
+          <div style="flex:1;font-size:12px;color:var(--text1)">${t.descripcion||''}</div>
+          <div style="width:80px;font-size:11px;color:var(--text3)">${t.fecha_fin?'Vence: '+t.fecha_fin:''}</div>
+          <span style="font-size:10px;background:var(--bg2);padding:2px 7px;border-radius:10px;color:${colors[t.estado]||'var(--text3)'}">${t.estado||''}</span>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  el.innerHTML=timelineHTML+sinFechasHTML;
 }
 
 function setVistaTareas(v){
@@ -1014,54 +1304,134 @@ async function delCert(id){
 // ═══════════════════════════════════
 // FINANZAS
 // ═══════════════════════════════════
+// ─── Consolidación holding ───────────────────────────────────────────────────
+function getEmpresasDelGrupo(empId, consolidar){
+  // Devuelve array de IDs: si consolidar y es holding, incluye subsidiarias
+  const emp=STATE.empresas.find(e=>e.id==empId);
+  if(!emp)return empId?[parseInt(empId)]:[];
+  if(consolidar && emp.es_holding){
+    const subs=STATE.empresas.filter(e=>e.holding_id==emp.id).map(e=>e.id);
+    return [emp.id,...subs];
+  }
+  return [emp.id];
+}
+
 function getPeriodosDeEmpresa(empId){
   return STATE.periodos.filter(p=>p.empresa_id==empId);
 }
+
+function getLabelsConsolidados(ids){
+  // Labels únicos presentes en cualquiera de las empresas del grupo
+  const labels=[...new Set(STATE.periodos.filter(p=>ids.includes(p.empresa_id)).map(p=>p.label))];
+  labels.sort((a,b)=>a.localeCompare(b));
+  return labels;
+}
+
+function consolidarPeriodo(ids, label){
+  // Suma todos los campos numéricos de los períodos con ese label en esas empresas
+  const pers=STATE.periodos.filter(p=>ids.includes(p.empresa_id)&&p.label===label);
+  if(!pers.length)return null;
+  const sum=(field)=>pers.reduce((acc,p)=>acc+(p[field]||0),0);
+  const tc=pers[0].tc||1; // TC del primero (referencia)
+  return{
+    label,tc,
+    ventas:sum('ventas'),cv:sum('cv'),cf:sum('cf'),otros:sum('otros'),
+    resultado_financiero:sum('resultado_financiero'),iigg:sum('iigg'),
+    caja:sum('caja'),cred:sum('cred'),inv:sum('inv'),bu:sum('bu'),
+    dc:sum('dc'),dfcp:sum('dfcp'),dflp:sum('dflp'),pn:sum('pn'),
+    _consolidado:true,_empresas:pers.length
+  };
+}
+
+function onCambioEmpresaFin(modulo){
+  // Muestra/oculta checkbox consolidado según si la empresa es holding
+  const selId={eerr:'sel-eerr-emp',balance:'sel-bal-emp',kpis:'sel-kpi-emp'}[modulo];
+  const chkId='chk-cons-'+modulo;
+  const empId=document.getElementById(selId).value;
+  const emp=STATE.empresas.find(e=>e.id==empId);
+  const esHolding=emp&&emp.es_holding;
+  const chkDiv=document.getElementById(chkId);
+  chkDiv.style.display=esHolding?'flex':'none';
+  // Reset checkbox al cambiar empresa
+  const cbId='consolidar-'+modulo;
+  document.getElementById(cbId).checked=false;
+  if(modulo==='eerr')loadPeriodosEERR();
+  if(modulo==='balance')loadPeriodosBalance();
+  if(modulo==='kpis')loadPeriodosKPI();
+}
+
 function loadPeriodosEERR(){
   const empId=document.getElementById('sel-eerr-emp').value;
-  const pers=getPeriodosDeEmpresa(empId);
+  const consolidar=document.getElementById('consolidar-eerr').checked;
+  const ids=getEmpresasDelGrupo(empId,consolidar);
+  const labels=consolidar&&ids.length>1?getLabelsConsolidados(ids):[...new Set(STATE.periodos.filter(p=>p.empresa_id==empId).map(p=>p.label))];
   ['sel-p1','sel-p2'].forEach(id=>{
     const el=document.getElementById(id);
-    el.innerHTML='<option value="">—</option>'+pers.map(p=>`<option value="${p.id}">${p.label}</option>`).join('');
+    el.innerHTML='<option value="">—</option>'+labels.map(l=>`<option value="${empId}|${l}">${l}</option>`).join('');
   });
   renderEERR();
 }
 function loadPeriodosBalance(){
   const empId=document.getElementById('sel-bal-emp').value;
-  const pers=getPeriodosDeEmpresa(empId);
+  const consolidar=document.getElementById('consolidar-balance').checked;
+  const ids=getEmpresasDelGrupo(empId,consolidar);
+  const labels=consolidar&&ids.length>1?getLabelsConsolidados(ids):[...new Set(STATE.periodos.filter(p=>p.empresa_id==empId).map(p=>p.label))];
   const el=document.getElementById('sel-bal');
-  el.innerHTML='<option value="">—</option>'+pers.map(p=>`<option value="${p.id}">${p.label}</option>`).join('');
+  el.innerHTML='<option value="">—</option>'+labels.map(l=>`<option value="${empId}|${l}">${l}</option>`).join('');
   renderBalance();
 }
 function loadPeriodosKPI(){
   const empId=document.getElementById('sel-kpi-emp').value;
-  const pers=getPeriodosDeEmpresa(empId);
+  const consolidar=document.getElementById('consolidar-kpis').checked;
+  const ids=getEmpresasDelGrupo(empId,consolidar);
+  const labels=consolidar&&ids.length>1?getLabelsConsolidados(ids):[...new Set(STATE.periodos.filter(p=>p.empresa_id==empId).map(p=>p.label))];
   const el=document.getElementById('sel-kpi');
-  el.innerHTML='<option value="">—</option>'+pers.map(p=>`<option value="${p.id}">${p.label}</option>`).join('');
+  el.innerHTML='<option value="">—</option>'+labels.map(l=>`<option value="${empId}|${l}">${l}</option>`).join('');
   renderKPIs();
 }
 
+function resolverPeriodo(selectorId, moduloConsolidarId){
+  const val=document.getElementById(selectorId).value;
+  if(!val)return null;
+  const parts=val.split('|');
+  if(parts.length<2||!parts[0]||!parts[1])return null;
+  const [empId,label]=parts;
+  const consolidar=document.getElementById(moduloConsolidarId).checked;
+  const ids=getEmpresasDelGrupo(empId,consolidar);
+  if(consolidar&&ids.length>1) return consolidarPeriodo(ids,label);
+  return STATE.periodos.find(p=>p.empresa_id==empId&&p.label===label);
+}
+
 function renderEERR(){
-  const p1id=document.getElementById('sel-p1').value;
-  const p2id=document.getElementById('sel-p2').value;
-  const p1=STATE.periodos.find(p=>p.id==p1id);
-  const p2=STATE.periodos.find(p=>p.id==p2id);
+  const p1=resolverPeriodo('sel-p1','consolidar-eerr');
+  const p2=resolverPeriodo('sel-p2','consolidar-eerr');
   const tc=p1?.tc||1;
   if(!p1){document.getElementById('eerr-stats').innerHTML='';document.getElementById('eerr-tbl').innerHTML='';return;}
-  const mb1=p1.ventas-p1.cv;const ebit1=mb1-p1.cf+(p1.otros||0);
+  const mb1=p1.ventas-p1.cv;
+  const ebit1=mb1-p1.cf+(p1.otros||0);
+  const rdofin1=p1.resultado_financiero||0;
+  const iigg1=p1.iigg||0;
+  const netprofit1=ebit1+rdofin1-iigg1;
   const stats=document.getElementById('eerr-stats');
-  stats.innerHTML=`
+  const badgeCons=p1._consolidado?`<div class="sc" style="background:var(--teal);color:#fff;border-radius:8px"><div class="sc-num" style="font-size:12px;color:#fff">CONSOLIDADO</div><div class="sc-lbl" style="color:rgba(255,255,255,0.8)">${p1._empresas} empresas</div></div>`:'';
+  stats.innerHTML=badgeCons+`
     <div class="sc"><div class="sc-num">${fmt(p1.ventas,tc)}</div><div class="sc-lbl">Ventas</div></div>
-    <div class="sc"><div class="sc-num">${fmt(mb1,tc)}</div><div class="sc-lbl">Margen bruto</div></div>
+    <div class="sc"><div class="sc-num">${fmt(mb1,tc)}</div><div class="sc-lbl">Margen Contribución</div></div>
     <div class="sc"><div class="sc-num" style="color:var(--teal)">${fmt(ebit1,tc)}</div><div class="sc-lbl">EBIT</div></div>
-    <div class="sc"><div class="sc-num">${p1.ventas?(mb1/p1.ventas*100).toFixed(1):0}%</div><div class="sc-lbl">% Margen</div></div>`;
+    <div class="sc"><div class="sc-num" style="color:${netprofit1>=0?'var(--teal)':'var(--red,#e53)'};font-weight:700">${fmt(netprofit1,tc)}</div><div class="sc-lbl">NET PROFIT</div></div>
+    <div class="sc"><div class="sc-num">${p1.ventas?(netprofit1/p1.ventas*100).toFixed(1):0}%</div><div class="sc-lbl">% Net Profit</div></div>`;
+  const ebit2=p2?p2.ventas-p2.cv-p2.cf+(p2.otros||0):null;
+  const np2=ebit2!=null?ebit2+(p2.resultado_financiero||0)-(p2.iigg||0):null;
   const rows=[
     ['Ventas netas',p1.ventas,p2?.ventas,'sub'],
     ['— Costos variables',p1.cv,p2?.cv,''],
-    ['Margen de contribución',mb1,p2?p2.ventas-p2.cv:null,'sub'],
+    ['Contribución Marginal',mb1,p2?p2.ventas-p2.cv:null,'sub'],
     ['— Costos fijos',p1.cf,p2?.cf,''],
-    ['Otros ingresos',p1.otros||0,p2?.otros||0,''],
-    ['EBIT',ebit1,p2?p2.ventas-p2.cv-p2.cf+(p2.otros||0):null,'tot'],
+    ['Otros ingresos/egresos',p1.otros||0,p2?.otros||0,''],
+    ['EBIT',ebit1,ebit2,'tot'],
+    ['Resultado financiero',rdofin1,p2?.resultado_financiero||0,''],
+    ['— IIGG',iigg1,p2?.iigg||0,''],
+    ['NET PROFIT',netprofit1,np2,'tot'],
   ];
   let html=`<thead><tr><th>Concepto</th><th>${p1.label}</th>${p2?`<th>${p2.label}</th><th>Δ%</th>`:''}</tr></thead><tbody>`;
   rows.forEach(([lbl,v1,v2,cls])=>{
@@ -1072,15 +1442,19 @@ function renderEERR(){
   document.getElementById('eerr-tbl').innerHTML=html+'</tbody>';
   const ctx=document.getElementById('chartEERR').getContext('2d');
   if(chartEERR)chartEERR.destroy();
-  const labels=STATE.periodos.filter(p=>p.empresa_id==document.getElementById('sel-eerr-emp').value).map(p=>p.label);
-  const ventas=STATE.periodos.filter(p=>p.empresa_id==document.getElementById('sel-eerr-emp').value).map(p=>CUR==='USD'?p.ventas/(p.tc||1):p.ventas);
-  const ebits=STATE.periodos.filter(p=>p.empresa_id==document.getElementById('sel-eerr-emp').value).map(p=>{const mb=p.ventas-p.cv;return CUR==='USD'?(mb-p.cf+(p.otros||0))/(p.tc||1):mb-p.cf+(p.otros||0);});
-  chartEERR=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Ventas',data:ventas,backgroundColor:'#E1F5EE',borderColor:'#1D9E75',borderWidth:1},{label:'EBIT',data:ebits,backgroundColor:'#1D9E75',borderColor:'#0F6E56',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true}}}});
+  const empIdG=document.getElementById('sel-eerr-emp').value;
+  const consolidarG=document.getElementById('consolidar-eerr').checked;
+  const idsG=getEmpresasDelGrupo(empIdG,consolidarG);
+  const labelsG=[...new Set(STATE.periodos.filter(p=>idsG.includes(p.empresa_id)).map(p=>p.label))].sort((a,b)=>a.localeCompare(b));
+  const labels=labelsG;
+  const ventas=labelsG.map(l=>{const pd=consolidarG&&idsG.length>1?consolidarPeriodo(idsG,l):STATE.periodos.find(p=>p.empresa_id==empIdG&&p.label===l);return pd?(CUR==='USD'?pd.ventas/(pd.tc||1):pd.ventas):0;});
+  const ebits=labelsG.map(l=>{const pd=consolidarG&&idsG.length>1?consolidarPeriodo(idsG,l):STATE.periodos.find(p=>p.empresa_id==empIdG&&p.label===l);if(!pd)return 0;const mb=pd.ventas-pd.cv;const e=mb-pd.cf+(pd.otros||0);return CUR==='USD'?e/(pd.tc||1):e;});
+  const netprofits=labelsG.map(l=>{const pd=consolidarG&&idsG.length>1?consolidarPeriodo(idsG,l):STATE.periodos.find(p=>p.empresa_id==empIdG&&p.label===l);if(!pd)return 0;const mb=pd.ventas-pd.cv;const e=mb-pd.cf+(pd.otros||0);const np=e+(pd.resultado_financiero||0)-(pd.iigg||0);return CUR==='USD'?np/(pd.tc||1):np;});
+  chartEERR=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Ventas',data:ventas,backgroundColor:'#E1F5EE',borderColor:'#1D9E75',borderWidth:1},{label:'EBIT',data:ebits,backgroundColor:'#1D9E75',borderColor:'#0F6E56',borderWidth:1},{label:'Net Profit',data:netprofits,backgroundColor:'#0F6E56',borderColor:'#0a4d3c',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true}}}});
 }
 
 function renderBalance(){
-  const pid=document.getElementById('sel-bal').value;
-  const p=STATE.periodos.find(x=>x.id==pid);
+  const p=resolverPeriodo('sel-bal','consolidar-balance');
   const tc=p?.tc||1;
   if(!p){document.getElementById('tbl-activo').innerHTML='';document.getElementById('tbl-pasivo').innerHTML='';return;}
   const acC=p.caja+p.cred+p.inv,acNC=p.bu,acT=acC+acNC;
@@ -1089,7 +1463,7 @@ function renderBalance(){
     <tr class="sub"><td>Activo corriente</td><td>${fmt(acC,tc)}</td></tr>
     <tr><td>· Caja y bancos</td><td>${fmt(p.caja,tc)}</td></tr>
     <tr><td>· Créditos</td><td>${fmt(p.cred,tc)}</td></tr>
-    <tr><td>· Inventarios</td><td>${fmt(p.inv,tc)}</td></tr>
+    <tr><td>· Bs de Cambio</td><td>${fmt(p.inv,tc)}</td></tr>
     <tr class="sub"><td>Activo no corriente</td><td>${fmt(acNC,tc)}</td></tr>
     <tr><td>· Bienes de uso</td><td>${fmt(p.bu,tc)}</td></tr>
     <tr class="tot"><td>TOTAL ACTIVO</td><td>${fmt(acT,tc)}</td></tr>
@@ -1106,19 +1480,33 @@ function renderBalance(){
 }
 
 function renderKPIs(){
-  const pid=document.getElementById('sel-kpi').value;
-  const p=STATE.periodos.find(x=>x.id==pid);
+  const p=resolverPeriodo('sel-kpi','consolidar-kpis');
   if(!p){document.getElementById('kpi-grid').innerHTML='';return;}
   const mb=p.ventas-p.cv,ebit=mb-p.cf+(p.otros||0);
-  const acC=p.caja+p.cred+p.inv,pasC=p.dc+p.dfcp,dT=p.dc+p.dfcp+p.dflp;
+  const rdofin=p.resultado_financiero||0,iigg=p.iigg||0;
+  const netprofit=ebit+rdofin-iigg;
+  const acC=p.caja+p.cred+p.inv,acNC=p.bu,acT=acC+acNC;
+  const pasC=p.dc+p.dfcp,pasLP=p.dflp,dT=p.dc+p.dfcp+p.dflp;
+  const capInv=p.pn+p.dflp;
   const kpis=[
-    {n:'Margen bruto %',v:(p.ventas?(mb/p.ventas*100):0).toFixed(1)+'%',ref:'>40% ideal',ok:mb/p.ventas>0.4?'kok':mb/p.ventas>0.2?'kwarn':'kbad'},
-    {n:'Margen EBIT %',v:(p.ventas?(ebit/p.ventas*100):0).toFixed(1)+'%',ref:'>10% ideal',ok:ebit/p.ventas>0.1?'kok':ebit/p.ventas>0.05?'kwarn':'kbad'},
+    // Rentabilidad sobre ventas
+    {n:'% CM / Ventas',v:(p.ventas?(mb/p.ventas*100):0).toFixed(1)+'%',ref:'>40% ideal',ok:p.ventas&&mb/p.ventas>0.4?'kok':p.ventas&&mb/p.ventas>0.2?'kwarn':'kbad'},
+    {n:'% EBIT / Ventas',v:(p.ventas?(ebit/p.ventas*100):0).toFixed(1)+'%',ref:'>10% ideal',ok:p.ventas&&ebit/p.ventas>0.1?'kok':p.ventas&&ebit/p.ventas>0.05?'kwarn':'kbad'},
+    {n:'% CF / Ventas',v:(p.ventas?(p.cf/p.ventas*100):0).toFixed(1)+'%',ref:'<30% ideal',ok:p.ventas&&p.cf/p.ventas<0.3?'kok':p.ventas&&p.cf/p.ventas<0.5?'kwarn':'kbad'},
+    {n:'% Net Profit / Ventas',v:(p.ventas?(netprofit/p.ventas*100):0).toFixed(1)+'%',ref:'>5% ideal',ok:p.ventas&&netprofit/p.ventas>0.05?'kok':p.ventas&&netprofit/p.ventas>0?'kwarn':'kbad'},
+    // Rentabilidad patrimonial
+    {n:'ROE %',v:p.pn?(netprofit/p.pn*100).toFixed(1)+'%':'—',ref:'>15% ideal',ok:p.pn&&netprofit/p.pn>0.15?'kok':p.pn&&netprofit/p.pn>0.08?'kwarn':'kbad'},
+    {n:'ROA %',v:acT?(ebit/acT*100).toFixed(1)+'%':'—',ref:'>8% ideal',ok:acT&&ebit/acT>0.08?'kok':acT&&ebit/acT>0.04?'kwarn':'kbad'},
+    {n:'ROI %',v:capInv?(netprofit/capInv*100).toFixed(1)+'%':'—',ref:'>10% ideal',ok:capInv&&netprofit/capInv>0.1?'kok':capInv&&netprofit/capInv>0.05?'kwarn':'kbad'},
+    // Eficiencia operativa
+    {n:'Rot. Cobranzas (días)',v:p.ventas?(p.cred/(p.ventas/365)).toFixed(0)+' días':'—',ref:'<60 días ideal',ok:p.ventas&&p.cred/(p.ventas/365)<60?'kok':p.ventas&&p.cred/(p.ventas/365)<90?'kwarn':'kbad'},
+    {n:'Rot. Bs de Cambio (días)',v:p.cv?(p.inv/(p.cv/365)).toFixed(0)+' días':'—',ref:'<45 días ideal',ok:p.cv&&p.inv/(p.cv/365)<45?'kok':p.cv&&p.inv/(p.cv/365)<90?'kwarn':'kbad'},
+    {n:'Leverage',v:p.pn?(acT/p.pn).toFixed(2)+'x':'—',ref:'<3x ideal',ok:p.pn&&acT/p.pn<3?'kok':p.pn&&acT/p.pn<5?'kwarn':'kbad'},
+    // Liquidez y deuda
     {n:'Liquidez corriente',v:pasC?(acC/pasC).toFixed(2):'—',ref:'>1.5 ideal',ok:pasC&&acC/pasC>1.5?'kok':pasC&&acC/pasC>1?'kwarn':'kbad'},
     {n:'Liquidez ácida',v:pasC?((p.caja+p.cred)/pasC).toFixed(2):'—',ref:'>1 ideal',ok:pasC&&(p.caja+p.cred)/pasC>1?'kok':pasC&&(p.caja+p.cred)/pasC>0.7?'kwarn':'kbad'},
     {n:'Endeudamiento %',v:p.pn?(dT/p.pn*100).toFixed(0)+'%':'—',ref:'<100% ideal',ok:p.pn&&dT/p.pn<1?'kok':p.pn&&dT/p.pn<2?'kwarn':'kbad'},
     {n:'Deuda / EBIT',v:ebit>0?(dT/ebit).toFixed(1)+'x':'—',ref:'<3x ideal',ok:ebit>0&&dT/ebit<3?'kok':ebit>0&&dT/ebit<5?'kwarn':'kbad'},
-    {n:'ROE %',v:p.pn?(ebit/p.pn*100).toFixed(1)+'%':'—',ref:'>15% ideal',ok:p.pn&&ebit/p.pn>0.15?'kok':p.pn&&ebit/p.pn>0.08?'kwarn':'kbad'},
     {n:'Capital de trabajo',v:fmt(acC-pasC,p.tc||1),ref:'Positivo ideal',ok:acC-pasC>0?'kok':acC-pasC>-p.ventas*0.1?'kwarn':'kbad'},
   ];
   document.getElementById('kpi-grid').innerHTML=kpis.map(k=>`
@@ -1141,6 +1529,8 @@ async function guardarPeriodo(){
     cv:parseFloat(document.getElementById('f-cv').value)||0,
     cf:parseFloat(document.getElementById('f-cf').value)||0,
     otros:parseFloat(document.getElementById('f-otros').value)||0,
+    resultado_financiero:parseFloat(document.getElementById('f-rdo-fin').value)||0,
+    iigg:parseFloat(document.getElementById('f-iigg').value)||0,
     caja:parseFloat(document.getElementById('f-caja').value)||0,
     cred:parseFloat(document.getElementById('f-cred').value)||0,
     inv:parseFloat(document.getElementById('f-inv').value)||0,
@@ -1424,8 +1814,8 @@ function exportXLSX(incEmps,incTar,incProy,incNot,incFin){
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Notas');
   }
   if(incFin){
-    const rows=[['Empresa','Período','TC','Ventas','CV','CF','Otros','EBIT']];
-    STATE.periodos.forEach(p=>{const mb=p.ventas-p.cv;rows.push([empNombre(p.empresa_id),p.label,p.tc,p.ventas,p.cv,p.cf,p.otros||0,mb-p.cf+(p.otros||0)]);});
+    const rows=[['Empresa','Período','TC','Ventas','CV','CF','Otros','EBIT','Rdo Financiero','IIGG','Net Profit']];
+    STATE.periodos.forEach(p=>{const mb=p.ventas-p.cv;const ebit=mb-p.cf+(p.otros||0);const np=ebit+(p.resultado_financiero||0)-(p.iigg||0);rows.push([empNombre(p.empresa_id),p.label,p.tc,p.ventas,p.cv,p.cf,p.otros||0,ebit,p.resultado_financiero||0,p.iigg||0,np]);});
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Finanzas');
   }
   XLSX.writeFile(wb,`andra_panel_${new Date().toISOString().slice(0,10)}.xlsx`);
