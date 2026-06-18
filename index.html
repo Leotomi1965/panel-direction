@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ANDRA PANEL</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css"/>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#0F6E56;
@@ -78,6 +79,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .filter-bar select,.filter-bar input{padding:5px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;}
 .filter-label{font-size:11px;color:var(--text3);white-space:nowrap;}
 .filter-sep{width:1px;height:20px;background:var(--border2);}
+.estado-pills{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.estado-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:99px;cursor:pointer;border:0.5px solid transparent;user-select:none;transition:all .12s;white-space:nowrap;}
+.estado-pill input[type=checkbox]{display:none;}
+.estado-pill.off{background:var(--bg2);color:var(--text3);border-color:var(--border2);}
+.estado-pill.on-pendiente{background:var(--amber-lt);color:var(--amber);border-color:var(--amber);}
+.estado-pill.on-en-curso{background:var(--blue-lt);color:var(--blue);border-color:var(--blue);}
+.estado-pill.on-completada{background:var(--teal-lt);color:var(--teal-dk);border-color:var(--teal);}
+.estado-pill.on-cancelada{background:var(--bg3);color:var(--text2);border-color:var(--border2);}
 
 /* TABLA GENERICA */
 .data-table{width:100%;border-collapse:collapse;font-size:13px;}
@@ -227,7 +236,7 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <button class="login-btn" onclick="doLogin()">INGRESAR</button>
     <div class="login-err" id="login-err"></div>
-    <div class="login-version">v4.0 · Acceso privado</div>
+    <div class="login-version">v5.0 · Supabase Auth</div>
   </div>
 </div>
 
@@ -307,13 +316,12 @@ textarea{resize:vertical;min-height:80px;}
         <select id="f-tar-empresa" onchange="renderTareas()"><option value="">Todas</option></select>
         <div class="filter-sep"></div>
         <span class="filter-label">Estado:</span>
-        <select id="f-tar-estado" onchange="renderTareas()">
-          <option value="">Todos</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="en-curso">En curso</option>
-          <option value="completada">Completada</option>
-          <option value="cancelada">Cancelada</option>
-        </select>
+        <div class="estado-pills" id="f-tar-estados">
+          <label class="estado-pill on-pendiente" data-val="pendiente"><input type="checkbox" checked onchange="updatePillClass(this.parentElement);renderTareas()"/>Pendiente</label>
+          <label class="estado-pill on-en-curso" data-val="en-curso"><input type="checkbox" checked onchange="updatePillClass(this.parentElement);renderTareas()"/>En curso</label>
+          <label class="estado-pill off" data-val="completada"><input type="checkbox" onchange="updatePillClass(this.parentElement);renderTareas()"/>Completada</label>
+          <label class="estado-pill off" data-val="cancelada"><input type="checkbox" onchange="updatePillClass(this.parentElement);renderTareas()"/>Cancelada</label>
+        </div>
         <div class="filter-sep"></div>
         <span class="filter-label">Desde:</span>
         <input type="date" id="f-tar-desde" onchange="renderTareas()" style="width:130px"/>
@@ -364,12 +372,12 @@ textarea{resize:vertical;min-height:80px;}
         <select id="f-proy-empresa" onchange="renderProyectos()"><option value="">Todas</option></select>
         <div class="filter-sep"></div>
         <span class="filter-label">Estado:</span>
-        <select id="f-proy-estado" onchange="renderProyectos()">
-          <option value="">Todos</option>
-          <option value="activo">Activo</option>
-          <option value="pausado">Pausado</option>
-          <option value="cerrado">Cerrado</option>
-        </select>
+        <div class="estado-pills" id="f-proy-estados">
+          <label class="estado-pill on-pendiente" data-val="pendiente"><input type="checkbox" checked onchange="updatePillClass(this.parentElement);renderProyectos()"/>Pendiente</label>
+          <label class="estado-pill on-en-curso" data-val="en-curso"><input type="checkbox" checked onchange="updatePillClass(this.parentElement);renderProyectos()"/>En curso</label>
+          <label class="estado-pill off" data-val="completada"><input type="checkbox" onchange="updatePillClass(this.parentElement);renderProyectos()"/>Completada</label>
+          <label class="estado-pill off" data-val="cancelada"><input type="checkbox" onchange="updatePillClass(this.parentElement);renderProyectos()"/>Cancelada</label>
+        </div>
         <div class="filter-sep"></div>
         <span class="filter-label">Vista:</span>
         <button class="btn btn-sm" id="btn-proy-tabla" onclick="setVistaProyectos('tabla')" style="background:var(--teal);color:#fff"><i class="ti ti-table"></i></button>
@@ -544,33 +552,42 @@ textarea{resize:vertical;min-height:80px;}
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script>
 // ═══════════════════════════════════
-// LOGIN
+// SUPABASE AUTH
 // ═══════════════════════════════════
-const AUTH_USER='rbariandaran@gmail.com';
-const AUTH_PASS='Gino2026';
-const SESSION_KEY='andra_panel_v4';
+const SB_URL='https://ydqasdmvpjlqefqqursu.supabase.co';
+const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcWFzZG12cGpscWVmcXF1cnN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDU5MjMsImV4cCI6MjA5NjUyMTkyM30.6dEbls_MztB9gXKbxERLp7yWGRFzSwisC8hEXUHJ1-Q';
+const supa=supabase.createClient(SB_URL,SB_ANON);
 
-function checkSession(){
-  if(sessionStorage.getItem(SESSION_KEY)==='ok')
+async function checkSession(){
+  const{data:{session}}=await supa.auth.getSession();
+  if(session){
     document.getElementById('login-screen').classList.add('hidden');
-}
-function doLogin(){
-  const e=document.getElementById('login-email').value.trim().toLowerCase();
-  const p=document.getElementById('login-pass').value;
-  if(e===AUTH_USER&&p===AUTH_PASS){
-    sessionStorage.setItem(SESSION_KEY,'ok');
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('login-err').textContent='';
     load();
-  } else {
-    document.getElementById('login-err').textContent='Usuario o contraseña incorrectos.';
-    document.getElementById('login-pass').value='';
-    document.getElementById('login-pass').focus();
   }
 }
-function doLogout(){
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-err');
+  const btn=document.querySelector('.login-btn');
+  errEl.textContent='';
+  btn.textContent='Ingresando…';
+  btn.disabled=true;
+  const{error}=await supa.auth.signInWithPassword({email,password:pass});
+  btn.textContent='INGRESAR';
+  btn.disabled=false;
+  if(error){
+    errEl.textContent='Usuario o contraseña incorrectos.';
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-pass').focus();
+    return;
+  }
+  document.getElementById('login-screen').classList.add('hidden');
+  load();
+}
+async function doLogout(){
   if(!confirm('¿Cerrar sesión?'))return;
-  sessionStorage.removeItem(SESSION_KEY);
+  await supa.auth.signOut();
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-email').value='';
   document.getElementById('login-pass').value='';
@@ -586,11 +603,15 @@ let gcalToken=null;
 
 function gcalGetToken(callback){
   if(gcalToken){callback();return;}
+  if(typeof google==="undefined"||!google.accounts||!google.accounts.oauth2){
+    alert("La libreria de Google no esta disponible. Recarga la pagina e intenta de nuevo.");return;
+  }
   const client=google.accounts.oauth2.initTokenClient({
     client_id:GCAL_CLIENT_ID,
     scope:GCAL_SCOPE,
+    hint:'rbariandaran@gmail.com',
     callback:(resp)=>{
-      if(resp.error){alert('Error al conectar con Google Calendar: '+resp.error);return;}
+      if(resp.error){alert("Error al conectar con Google Calendar: "+resp.error);return;}
       gcalToken=resp.access_token;
       callback();
     }
@@ -637,17 +658,18 @@ async function gcalEnviarTarea(tareaId){
 }
 
 // ═══════════════════════════════════
-// SUPABASE
+// DB — usa token de sesión activa
 // ═══════════════════════════════════
-const SB_URL='https://ydqasdmvpjlqefqqursu.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcWFzZG12cGpscWVmcXF1cnN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDU5MjMsImV4cCI6MjA5NjUyMTkyM30.6dEbls_MztB9gXKbxERLp7yWGRFzSwisC8hEXUHJ1-Q';
-const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
-
+async function getH(){
+  const{data:{session}}=await supa.auth.getSession();
+  const token=session?.access_token||SB_ANON;
+  return{'apikey':SB_ANON,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation'};
+}
 const db={
-  async get(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:H});return r.json();},
-  async post(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:H,body:JSON.stringify(b)});return r.json();},
-  async patch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:H,body:JSON.stringify(b)});return r.json();},
-  async del(t,id){await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:H});}
+  async get(t,q=''){const h=await getH();const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:h});return r.json();},
+  async post(t,b){const h=await getH();const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:h,body:JSON.stringify(b)});return r.json();},
+  async patch(t,id,b){const h=await getH();const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:h,body:JSON.stringify(b)});return r.json();},
+  async del(t,id){const h=await getH();await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:h});}
 };
 
 // ═══════════════════════════════════
@@ -948,14 +970,26 @@ function renderFichaEmpresa(id){
 // ═══════════════════════════════════
 // TAREAS
 // ═══════════════════════════════════
+function getEstadosPills(containerId){
+  const pills=document.querySelectorAll('#'+containerId+' .estado-pill');
+  const activos=[];
+  pills.forEach(p=>{if(p.querySelector('input').checked)activos.push(p.dataset.val);});
+  return activos;
+}
+function updatePillClass(el){
+  const chk=el.querySelector('input');
+  const val=el.dataset.val;
+  if(chk.checked){el.className='estado-pill on-'+val;}
+  else{el.className='estado-pill off';}
+}
 function renderTareas(){
   const empId=document.getElementById('f-tar-empresa').value;
-  const estado=document.getElementById('f-tar-estado').value;
+  const estados=getEstadosPills('f-tar-estados');
   const desde=document.getElementById('f-tar-desde').value;
   const hasta=document.getElementById('f-tar-hasta').value;
   let tar=STATE.tareas;
   if(empId)tar=tar.filter(t=>t.empresa_id==empId);
-  if(estado)tar=tar.filter(t=>t.estado===estado);
+  if(estados.length)tar=tar.filter(t=>estados.includes(t.estado||'pendiente'));
   if(desde)tar=tar.filter(t=>t.fecha_fin>=desde);
   if(hasta)tar=tar.filter(t=>t.fecha_fin<=hasta);
   if(vistaTareas==='tabla')renderTareasTabla(tar);
@@ -1070,9 +1104,18 @@ function setVistaTareas(v){
   document.getElementById('btn-vista-tiempo').style.cssText=v==='tiempo'?'background:var(--teal);color:#fff':'';
   renderTareas();
 }
+function resetPills(containerId,defaults){
+  document.querySelectorAll('#'+containerId+' .estado-pill').forEach(p=>{
+    const val=p.dataset.val;
+    const on=defaults.includes(val);
+    p.querySelector('input').checked=on;
+    p.className=on?'estado-pill on-'+val:'estado-pill off';
+  });
+}
 function clearFiltrosTareas(){
-  ['f-tar-empresa','f-tar-estado'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-tar-empresa').value='';
   ['f-tar-desde','f-tar-hasta'].forEach(id=>document.getElementById(id).value='');
+  resetPills('f-tar-estados',['pendiente','en-curso']);
   renderTareas();
 }
 async function delTarea(id){
@@ -1137,10 +1180,10 @@ function editNota(id){
 // ═══════════════════════════════════
 function renderProyectos(){
   const empId=document.getElementById('f-proy-empresa').value;
-  const estado=document.getElementById('f-proy-estado').value;
+  const estados=getEstadosPills('f-proy-estados');
   let proy=STATE.proyectos;
   if(empId)proy=proy.filter(p=>p.empresa_id==empId);
-  if(estado)proy=proy.filter(p=>p.estado===estado);
+  if(estados.length)proy=proy.filter(p=>estados.includes(p.estado||'pendiente'));
   if(vistaProyectos==='tabla')renderProyectosTabla(proy);
   else renderProyectosGantt(proy);
 }
@@ -1638,9 +1681,10 @@ function openModal(type,data=null){
         </select></div>
       <div class="form-group"><label class="fl">Estado</label>
         <select id="m-estado">
-          <option value="activo"${data?.estado==='activo'||!data?' selected':''}>Activo</option>
-          <option value="pausado"${data?.estado==='pausado'?' selected':''}>Pausado</option>
-          <option value="cerrado"${data?.estado==='cerrado'?' selected':''}>Cerrado</option>
+          <option value="pendiente"${data?.estado==='pendiente'||!data?' selected':''}>Pendiente</option>
+          <option value="en-curso"${data?.estado==='en-curso'?' selected':''}>En curso</option>
+          <option value="completada"${data?.estado==='completada'?' selected':''}>Completada</option>
+          <option value="cancelada"${data?.estado==='cancelada'?' selected':''}>Cancelada</option>
         </select></div>
     </div>
     <div class="modal-actions">
@@ -1846,10 +1890,6 @@ function closeSidebar(){
   document.getElementById('mobOverlay').classList.remove('open');
 }
 
-// ═══════════════════════════════════
-// INIT
-// ═══════════════════════════════════
-if(sessionStorage.getItem(SESSION_KEY)==='ok')load();
 </script>
 </body>
 </html>
