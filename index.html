@@ -552,10 +552,12 @@ textarea{resize:vertical;min-height:80px;}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script type="module" src="js/main.js"></script>
 <script>
 // ═══════════════════════════════════
-// LOGIN — Supabase Auth
+// LEGACY INLINE — kept for reference only, NOT executed
 // ═══════════════════════════════════
+if(false){
 const SB_URL='https://ydqasdmvpjlqefqqursu.supabase.co';
 const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcWFzZG12cGpscWVmcXF1cnN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDU5MjMsImV4cCI6MjA5NjUyMTkyM30.6dEbls_MztB9gXKbxERLp7yWGRFzSwisC8hEXUHJ1-Q';
 const SESSION_KEY='andra_session_v6';
@@ -1967,6 +1969,7 @@ function closeSidebar(){
   document.getElementById('mobOverlay').classList.remove('open');
 }
 
+} // end if(false) — legacy block
 </script>
 </body>
 </html>
