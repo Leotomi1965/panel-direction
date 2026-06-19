@@ -1,0 +1,3 @@
+export const SB_URL='https://ydqasdmvpjlqefqqursu.supabase.co';
+export const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcWFzZG12cGpscWVmcXF1cnN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDU5MjMsImV4cCI6MjA5NjUyMTkyM30.6dEbls_MztB9gXKbxERLp7yWGRFzSwisC8hEXUHJ1-Q';
+export const SESSION_KEY='andra_session_v6';
