@@ -204,12 +204,15 @@ textarea{resize:vertical;min-height:80px;}
   .page{padding:1rem;max-width:100%;}
   .stat-grid{grid-template-columns:repeat(2,1fr);}
   .form-grid{grid-template-columns:1fr;}
-  .form-grid-3{grid-template-columns:1fr 1fr;}
+  .form-grid-3{grid-template-columns:1fr;}
   .filter-bar{gap:6px;}
   .currency-toggle{display:none;}
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   .gantt-hdr,.gantt-row{grid-template-columns:130px 1fr 40px;}
   .modal-box{padding:1.25rem 1rem;}
+  .data-table,.fin-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .balance-grid{grid-template-columns:1fr!important;}
+  #syncStatus{display:none;}
 }
 @media(min-width:681px){
   .mob-menu-btn{display:none;}
@@ -235,7 +238,7 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <button class="login-btn" onclick="doLogin()">INGRESAR</button>
     <div class="login-err" id="login-err"></div>
-    <div class="login-version">v5.0 · Fase A</div>
+    <div class="login-version">v6.0 · Supabase Auth</div>
   </div>
 </div>
 
@@ -442,7 +445,7 @@ textarea{resize:vertical;min-height:80px;}
         <span class="filter-label">Período:</span>
         <select id="sel-bal" onchange="renderBalance()"></select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="balance-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div class="card"><table class="fin-table" id="tbl-activo"></table></div>
         <div class="card"><table class="fin-table" id="tbl-pasivo"></table></div>
       </div>
@@ -551,37 +554,50 @@ textarea{resize:vertical;min-height:80px;}
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script>
 // ═══════════════════════════════════
-// LOGIN — Fase A (credenciales seguras)
+// LOGIN — Supabase Auth
 // ═══════════════════════════════════
 const SB_URL='https://ydqasdmvpjlqefqqursu.supabase.co';
 const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcWFzZG12cGpscWVmcXF1cnN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDU5MjMsImV4cCI6MjA5NjUyMTkyM30.6dEbls_MztB9gXKbxERLp7yWGRFzSwisC8hEXUHJ1-Q';
-const AUTH_USER='rbariandaran@gmail.com';
-const AUTH_PASS='Gino2026';
-const SESSION_KEY='andra_session_v5';
+const SESSION_KEY='andra_session_v6';
+let sbToken=null;
 
-function checkSession(){
-  if(sessionStorage.getItem(SESSION_KEY)==='ok'){
-    document.getElementById('login-screen').classList.add('hidden');
-    load();
-  }
+async function checkSession(){
+  const token=sessionStorage.getItem(SESSION_KEY);
+  if(!token)return;
+  const r=await fetch(`${SB_URL}/auth/v1/user`,{headers:{'apikey':SB_ANON,'Authorization':'Bearer '+token}});
+  if(r.ok){sbToken=token;document.getElementById('login-screen').classList.add('hidden');load();}
+  else sessionStorage.removeItem(SESSION_KEY);
 }
-function doLogin(){
-  const email=document.getElementById('login-email').value.trim().toLowerCase();
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   const errEl=document.getElementById('login-err');
-  if(email===AUTH_USER&&pass===AUTH_PASS){
-    sessionStorage.setItem(SESSION_KEY,'ok');
+  const btn=document.querySelector('.login-btn');
+  errEl.textContent='';
+  if(btn){btn.disabled=true;btn.textContent='ENTRANDO…';}
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{
+      method:'POST',
+      headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error_description||d.msg||'Credenciales incorrectas');
+    sbToken=d.access_token;
+    sessionStorage.setItem(SESSION_KEY,sbToken);
     document.getElementById('login-screen').classList.add('hidden');
-    errEl.textContent='';
     load();
-  } else {
-    errEl.textContent='Usuario o contraseña incorrectos.';
+  }catch(e){
+    errEl.textContent=e.message;
     document.getElementById('login-pass').value='';
     document.getElementById('login-pass').focus();
+    if(btn){btn.disabled=false;btn.textContent='INGRESAR';}
   }
 }
-function doLogout(){
+async function doLogout(){
   if(!confirm('¿Cerrar sesión?'))return;
+  if(sbToken)await fetch(`${SB_URL}/auth/v1/logout`,{method:'POST',headers:{'apikey':SB_ANON,'Authorization':'Bearer '+sbToken}}).catch(()=>{});
+  sbToken=null;
   sessionStorage.removeItem(SESSION_KEY);
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-email').value='';
@@ -653,14 +669,14 @@ async function gcalEnviarTarea(tareaId){
 }
 
 // ═══════════════════════════════════
-// DB — headers fijos con clave anon
+// DB — headers dinámicos con JWT auth
 // ═══════════════════════════════════
-const H={'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json','Prefer':'return=representation'};
+function getH(){return{'apikey':SB_ANON,'Authorization':'Bearer '+(sbToken||SB_ANON),'Content-Type':'application/json','Prefer':'return=representation'};}
 const db={
-  async get(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:H});return r.json();},
-  async post(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:H,body:JSON.stringify(b)});return r.json();},
-  async patch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:H,body:JSON.stringify(b)});return r.json();},
-  async del(t,id){await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:H});}
+  async get(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:getH()});const d=await r.json();if(!r.ok)throw new Error(d.message||d.error||`Error ${r.status}`);return d;},
+  async post(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:getH(),body:JSON.stringify(b)});const d=await r.json();if(!r.ok)throw new Error(d.message||d.error||`Error ${r.status}`);return d;},
+  async patch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:getH(),body:JSON.stringify(b)});const d=await r.json();if(!r.ok)throw new Error(d.message||d.error||`Error ${r.status}`);return d;},
+  async del(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:getH()});if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.message||d.error||`Error ${r.status}`);}}
 };
 
 // ═══════════════════════════════════
@@ -701,7 +717,7 @@ async function load(){
     populateFiltros();
     renderPage(document.querySelector('.sb-item.active')?.dataset.page||'empresas');
     syncStatus('ok');
-  }catch(e){syncStatus('err');console.error('load error:',e);}
+  }catch(e){syncStatus('err');console.error('load error:',e);alert('Error al cargar los datos: '+e.message);}
 }
 
 function syncStatus(s){
@@ -818,9 +834,11 @@ function renderEmpresas(){
 
 async function delEmpresa(id){
   if(!confirm('¿Eliminar empresa? Se eliminarán también sus tareas, proyectos y períodos.'))return;
-  await db.del('empresas',id);
-  STATE.empresas=STATE.empresas.filter(e=>e.id!==id);
-  populateFiltros();renderEmpresas();
+  try{
+    await db.del('empresas',id);
+    STATE.empresas=STATE.empresas.filter(e=>e.id!==id);
+    populateFiltros();renderEmpresas();
+  }catch(e){alert('Error al eliminar empresa: '+e.message);}
 }
 function editEmpresa(id){
   const e=STATE.empresas.find(x=>x.id===id);
@@ -879,7 +897,7 @@ function renderFichaEmpresa(id){
     ?`<table class="data-table"><thead><tr><th>Proyecto</th><th>Estado</th><th>Inicio</th><th>Fin</th><th>Presupuesto</th><th>Avance</th></tr></thead><tbody>
       ${proyectos.map(p=>{
         const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
-        const avance=certs.length?Math.max(...certs.map(c=>c.avance_fisico)):0;
+        const avance=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
         return`<tr>
           <td><strong>${p.nombre||'—'}</strong><div class="muted" style="font-size:11px">${p.detalle||''}</div></td>
           <td>${badgeEstado(p.estado)}</td>
@@ -1111,9 +1129,11 @@ function clearFiltrosTareas(){
 }
 async function delTarea(id){
   if(!confirm('¿Eliminar tarea?'))return;
-  await db.del('tareas',id);
-  STATE.tareas=STATE.tareas.filter(t=>t.id!==id);
-  renderTareas();
+  try{
+    await db.del('tareas',id);
+    STATE.tareas=STATE.tareas.filter(t=>t.id!==id);
+    renderTareas();
+  }catch(e){alert('Error al eliminar tarea: '+e.message);}
 }
 function editTarea(id){
   const t=STATE.tareas.find(x=>x.id===id);
@@ -1139,6 +1159,7 @@ function renderNotas(){
         <div>
           <span style="font-size:12px;color:var(--text3)">${n.fecha_input||'—'}</span>
           ${n.empresa_id?`<span style="font-size:12px;color:var(--teal);margin-left:8px">· ${empNombre(n.empresa_id)}</span>`:''}
+          ${n.tema?`<span style="font-size:12px;color:var(--teal);margin-left:8px">· ${n.tema}</span>`:''}
         </div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm" onclick="editNota(${n.id})"><i class="ti ti-pencil"></i></button>
@@ -1157,9 +1178,11 @@ function clearFiltrosNotas(){
 }
 async function delNota(id){
   if(!confirm('¿Eliminar nota?'))return;
-  await db.del('notas',id);
-  STATE.notas=STATE.notas.filter(n=>n.id!==id);
-  renderNotas();
+  try{
+    await db.del('notas',id);
+    STATE.notas=STATE.notas.filter(n=>n.id!==id);
+    renderNotas();
+  }catch(e){alert('Error al eliminar nota: '+e.message);}
 }
 function editNota(id){
   const n=STATE.notas.find(x=>x.id===id);
@@ -1188,7 +1211,7 @@ function renderProyectosTabla(proy){
     <thead><tr><th>Empresa</th><th>Proyecto</th><th>Inicio</th><th>Fin</th><th>Presupuesto</th><th>Avance</th><th>Estado</th><th></th></tr></thead>
     <tbody>${proy.map(p=>{
       const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
-      const avanceFis=certs.length?Math.max(...certs.map(c=>c.avance_fisico)):0;
+      const avanceFis=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
       const montoCert=certs.reduce((s,c)=>s+(c.monto_certificado||0),0);
       const saldo=(p.presupuesto||0)-montoCert;
       return`<tr>
@@ -1235,7 +1258,7 @@ function renderProyectosGantt(proy){
       const left=(ini/totalDias*100).toFixed(1);
       const width=Math.max((dur/totalDias*100),2).toFixed(1);
       const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
-      const avance=certs.length?Math.max(...certs.map(c=>c.avance_fisico)):0;
+      const avance=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
       const color=colors[i%colors.length];
       return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div style="width:210px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)" title="${p.nombre}">${p.nombre}</div>
@@ -1266,7 +1289,7 @@ function verDetalle(id){
   const certs=STATE.certificaciones.filter(c=>c.proyecto_id===id);
   const montoCert=certs.reduce((s,c)=>s+(c.monto_certificado||0),0);
   const saldo=(p.presupuesto||0)-montoCert;
-  const avance=certs.length?Math.max(...certs.map(c=>c.avance_fisico)):0;
+  const avance=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
   document.getElementById('proy-det-info').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1rem">
       <div class="sc"><div class="sc-num">${fmtPeso(p.presupuesto)}</div><div class="sc-lbl">Presupuesto ${p.moneda||'ARS'}</div></div>
@@ -1319,10 +1342,12 @@ function renderCertificaciones(proyId){
 
 async function delProyecto(id){
   if(!confirm('¿Eliminar proyecto y sus certificaciones?'))return;
-  await db.del('proyectos',id);
-  STATE.proyectos=STATE.proyectos.filter(p=>p.id!==id);
-  STATE.certificaciones=STATE.certificaciones.filter(c=>c.proyecto_id!==id);
-  renderProyectos();
+  try{
+    await db.del('proyectos',id);
+    STATE.proyectos=STATE.proyectos.filter(p=>p.id!==id);
+    STATE.certificaciones=STATE.certificaciones.filter(c=>c.proyecto_id!==id);
+    renderProyectos();
+  }catch(e){alert('Error al eliminar proyecto: '+e.message);}
 }
 function editProyecto(id){
   const p=STATE.proyectos.find(x=>x.id===id);
@@ -1330,9 +1355,11 @@ function editProyecto(id){
 }
 async function delCert(id){
   if(!confirm('¿Eliminar certificación?'))return;
-  await db.del('certificaciones',id);
-  STATE.certificaciones=STATE.certificaciones.filter(c=>c.id!==id);
-  if(proyectoActivoId)renderCertificaciones(proyectoActivoId);
+  try{
+    await db.del('certificaciones',id);
+    STATE.certificaciones=STATE.certificaciones.filter(c=>c.id!==id);
+    if(proyectoActivoId)renderCertificaciones(proyectoActivoId);
+  }catch(e){alert('Error al eliminar certificación: '+e.message);}
 }
 
 // ═══════════════════════════════════
@@ -1575,11 +1602,13 @@ async function guardarPeriodo(){
     pn:parseFloat(document.getElementById('f-pn').value)||0,
   };
   const existe=STATE.periodos.find(p=>p.empresa_id==empId&&p.label===label);
-  let result;
-  if(existe){result=await db.patch('periodos',existe.id,body);STATE.periodos=STATE.periodos.map(p=>p.id===existe.id?{...p,...body}:p);}
-  else{result=await db.post('periodos',body);if(Array.isArray(result))STATE.periodos.push(...result);}
-  document.getElementById('save-msg').textContent='✓ Guardado';
-  setTimeout(()=>document.getElementById('save-msg').textContent='',2500);
+  try{
+    let result;
+    if(existe){result=await db.patch('periodos',existe.id,body);STATE.periodos=STATE.periodos.map(p=>p.id===existe.id?{...p,...body}:p);}
+    else{result=await db.post('periodos',body);if(Array.isArray(result))STATE.periodos.push(...result);}
+    document.getElementById('save-msg').textContent='✓ Guardado';
+    setTimeout(()=>document.getElementById('save-msg').textContent='',2500);
+  }catch(e){alert('Error al guardar período: '+e.message);}
 }
 
 // ═══════════════════════════════════
@@ -1644,6 +1673,8 @@ function openModal(type,data=null){
     <div style="margin-bottom:10px">
       <div class="form-group" style="margin-bottom:10px"><label class="fl">Empresa (opcional)</label>
         <select id="m-empresa"><option value="">— sin empresa —</option>${empsOpts}</select></div>
+      <div class="form-group" style="margin-bottom:10px"><label class="fl">Tema</label>
+        <input id="m-tema" value="${data?.tema||''}" placeholder="Ej: Reunión, Acuerdo, Seguimiento…"/></div>
       <div class="form-group"><label class="fl">Texto *</label>
         <textarea id="m-texto" style="min-height:120px">${data?.texto||''}</textarea></div>
     </div>
@@ -1734,7 +1765,7 @@ async function saveModal(){
   else if(modalType==='nota'){
     const texto=document.getElementById('m-texto').value.trim();
     if(!texto){alert('El texto es obligatorio');return;}
-    body={texto,empresa_id:document.getElementById('m-empresa').value||null,fecha_input:today()};
+    body={texto,tema:document.getElementById('m-tema').value.trim()||null,empresa_id:document.getElementById('m-empresa').value||null,fecha_input:today()};
     table='notas';
   }
   else if(modalType==='proyecto'){
@@ -1759,22 +1790,28 @@ async function saveModal(){
     table='certificaciones';
   }
 
-  let result;
-  if(modalId){
-    result=await db.patch(table,modalId,body);
-    STATE[table]=STATE[table].map(x=>x.id===modalId?{...x,...body}:x);
-  } else {
-    result=await db.post(table,body);
-    if(Array.isArray(result)&&result.length)STATE[table].push(result[0]);
+  const saveBtn=document.querySelector('#modal-box .btn-primary');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.innerHTML='<i class="ti ti-loader-2"></i> Guardando…';}
+  try{
+    let result;
+    if(modalId){
+      result=await db.patch(table,modalId,body);
+      STATE[table]=STATE[table].map(x=>x.id===modalId?{...x,...body}:x);
+    } else {
+      result=await db.post(table,body);
+      if(Array.isArray(result)&&result.length)STATE[table].push(result[0]);
+    }
+    closeModal();
+    populateFiltros();
+    if(modalType==='empresa')renderEmpresas();
+    else if(modalType==='tarea')renderTareas();
+    else if(modalType==='nota')renderNotas();
+    else if(modalType==='proyecto')renderProyectos();
+    else if(modalType==='certificacion'&&proyectoActivoId){verDetalle(proyectoActivoId);}
+  }catch(e){
+    if(saveBtn){saveBtn.disabled=false;saveBtn.innerHTML='Guardar';}
+    alert('Error al guardar: '+e.message);
   }
-
-  closeModal();
-  populateFiltros();
-  if(modalType==='empresa')renderEmpresas();
-  else if(modalType==='tarea')renderTareas();
-  else if(modalType==='nota')renderNotas();
-  else if(modalType==='proyecto')renderProyectos();
-  else if(modalType==='certificacion'&&proyectoActivoId){verDetalle(proyectoActivoId);}
 }
 
 // ═══════════════════════════════════
@@ -1817,6 +1854,7 @@ function doExport(){
   const incNot=document.getElementById('ex-notas').checked;
   const incFin=document.getElementById('ex-finanzas').checked;
   if(exportFmt==='xlsx')exportXLSX(incEmps,incTar,incProy,incNot,incFin);
+  else if(exportFmt==='csv')exportCSV(incEmps,incTar,incProy,incNot,incFin);
   else if(exportFmt==='pdf')exportPDF(incEmps,incTar,incProy,incNot,incFin);
   closeExport();
 }
@@ -1837,7 +1875,7 @@ function exportXLSX(incEmps,incTar,incProy,incNot,incFin){
     const rows=[['Empresa','Proyecto','Detalle','Estado','Fecha Inicio','Fecha Fin','Presupuesto','Moneda','Avance %','Certificado','Saldo']];
     STATE.proyectos.forEach(p=>{
       const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
-      const avance=certs.length?Math.max(...certs.map(c=>c.avance_fisico)):0;
+      const avance=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
       const cert=certs.reduce((s,c)=>s+(c.monto_certificado||0),0);
       rows.push([empNombre(p.empresa_id),p.nombre,p.detalle,p.estado,p.fecha_inicio,p.fecha_fin,p.presupuesto,p.moneda,avance,cert,(p.presupuesto||0)-cert]);
     });
@@ -1863,10 +1901,58 @@ function exportPDF(incEmps,incTar,incProy,incNot,incFin){
   html+=`<h1>ANDRA PANEL</h1><p class="meta">Exportado el ${new Date().toLocaleDateString('es-AR')} · Moneda: ${CUR}</p>`;
   if(incEmps){html+=`<h2>Empresas</h2><table><tr><th>Nombre</th><th>Rubro</th><th>CUIT</th><th>Tipo</th></tr>`;STATE.empresas.forEach(e=>{html+=`<tr><td>${e.nombre}</td><td>${e.rubro||''}</td><td>${e.cuit||''}</td><td>${e.es_holding?'Holding':'Empresa'}</td></tr>`;});html+='</table>';}
   if(incTar){html+=`<h2>Tareas</h2><table><tr><th>Empresa</th><th>Descripción</th><th>Estado</th><th>Vence</th></tr>`;STATE.tareas.forEach(t=>{html+=`<tr><td>${empNombre(t.empresa_id)}</td><td>${t.descripcion||''}</td><td>${t.estado||''}</td><td>${t.fecha_fin||''}</td></tr>`;});html+='</table>';}
-  if(incProy){html+=`<h2>Proyectos</h2><table><tr><th>Empresa</th><th>Proyecto</th><th>Estado</th><th>Presupuesto</th><th>Avance</th></tr>`;STATE.proyectos.forEach(p=>{const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);const avance=certs.length?Math.max(...certs.map(c=>c.avance_fisico)):0;html+=`<tr><td>${empNombre(p.empresa_id)}</td><td>${p.nombre||''}</td><td>${p.estado||''}</td><td>${fmtPeso(p.presupuesto)} ${p.moneda||''}</td><td>${avance}%</td></tr>`;});html+='</table>';}
+  if(incProy){html+=`<h2>Proyectos</h2><table><tr><th>Empresa</th><th>Proyecto</th><th>Estado</th><th>Presupuesto</th><th>Avance</th></tr>`;STATE.proyectos.forEach(p=>{const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);const avance=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;html+=`<tr><td>${empNombre(p.empresa_id)}</td><td>${p.nombre||''}</td><td>${p.estado||''}</td><td>${fmtPeso(p.presupuesto)} ${p.moneda||''}</td><td>${avance}%</td></tr>`;});html+='</table>';}
   if(incNot){html+=`<h2>Notas</h2><table><tr><th>Fecha</th><th>Empresa</th><th>Texto</th></tr>`;STATE.notas.forEach(n=>{html+=`<tr><td>${n.fecha_input||''}</td><td>${empNombre(n.empresa_id)}</td><td>${(n.texto||'').slice(0,200)}</td></tr>`;});html+='</table>';}
   html+=`<script>window.onload=()=>window.print()<\/script></body></html>`;
   w.document.write(html);w.document.close();
+}
+
+function exportCSV(incEmps,incTar,incProy,incNot,incFin){
+  const esc=v=>{const s=String(v==null?'':v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;};
+  const row=cols=>cols.map(esc).join(',')+'\n';
+  let csv='';
+  if(incEmps){
+    csv+='EMPRESAS\n';
+    csv+=row(['Nombre','Rubro','CUIT','Domicilio','Responsable','Celular','Email','Es Holding','Holding Padre']);
+    STATE.empresas.forEach(e=>csv+=row([e.nombre,e.rubro,e.cuit,e.domicilio,e.responsable,e.celular,e.mail,e.es_holding?'Sí':'No',e.holding_id?empNombre(e.holding_id):'']));
+    csv+='\n';
+  }
+  if(incTar){
+    csv+='TAREAS\n';
+    csv+=row(['Empresa','Descripción','Responsable','Estado','Fecha Input','Fecha Inicio','Fecha Fin']);
+    STATE.tareas.forEach(t=>csv+=row([empNombre(t.empresa_id),t.descripcion,t.responsable,t.estado,t.fecha_input,t.fecha_inicio,t.fecha_fin]));
+    csv+='\n';
+  }
+  if(incProy){
+    csv+='PROYECTOS\n';
+    csv+=row(['Empresa','Proyecto','Detalle','Estado','Fecha Inicio','Fecha Fin','Presupuesto','Moneda','Avance %','Certificado','Saldo']);
+    STATE.proyectos.forEach(p=>{
+      const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
+      const avance=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
+      const cert=certs.reduce((s,c)=>s+(c.monto_certificado||0),0);
+      csv+=row([empNombre(p.empresa_id),p.nombre,p.detalle,p.estado,p.fecha_inicio,p.fecha_fin,p.presupuesto,p.moneda,avance,cert,(p.presupuesto||0)-cert]);
+    });
+    csv+='\n';
+  }
+  if(incNot){
+    csv+='NOTAS\n';
+    csv+=row(['Fecha','Empresa','Texto']);
+    STATE.notas.forEach(n=>csv+=row([n.fecha_input,empNombre(n.empresa_id),n.texto]));
+    csv+='\n';
+  }
+  if(incFin){
+    csv+='FINANZAS\n';
+    csv+=row(['Empresa','Período','TC','Ventas','CV','CF','Otros','EBIT','Rdo Financiero','IIGG','Net Profit']);
+    STATE.periodos.forEach(p=>{const mb=p.ventas-p.cv;const ebit=mb-p.cf+(p.otros||0);const np=ebit+(p.resultado_financiero||0)-(p.iigg||0);csv+=row([empNombre(p.empresa_id),p.label,p.tc,p.ventas,p.cv,p.cf,p.otros||0,ebit,p.resultado_financiero||0,p.iigg||0,np]);});
+    csv+='\n';
+  }
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`andra_panel_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ═══════════════════════════════════
