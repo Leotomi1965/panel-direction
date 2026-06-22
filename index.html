@@ -2,7 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="ANDRA PANEL"/>
 <title>ANDRA PANEL</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css"/>
 <script src="https://accounts.google.com/gsi/client"></script>
@@ -192,28 +195,84 @@ textarea{resize:vertical;min-height:80px;}
 .mob-currency{display:none;gap:6px;padding:.75rem 1rem;border-top:0.5px solid var(--border);}
 .mob-currency .ct-btn{flex:1;text-align:center;border:0.5px solid var(--border2);border-radius:var(--radius);}
 .mob-currency .ct-btn.active{background:var(--teal);color:#fff;border-color:var(--teal-dk);}
+/* Ocultar texto en botones topbar mobile — solo ícono */
+.btn-label-mob{display:inline;}
 
 @media(max-width:680px){
+  /* ── Layout base ── */
   .sidebar{position:fixed;left:-240px;top:0;bottom:0;width:240px;z-index:50;transition:left .25s ease;overflow-y:auto;}
   .sidebar.open{left:0;box-shadow:4px 0 20px rgba(0,0,0,0.18);}
   .shell{flex-direction:column;}
   .main{width:100%;}
-  .topbar{padding:0 1rem;}
-  .mob-menu-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);cursor:pointer;font-size:18px;color:var(--text2);}
+
+  /* ── Topbar ── */
+  .topbar{padding:0 .75rem;height:48px;}
+  .topbar-title{font-size:14px;}
+  .mob-menu-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);cursor:pointer;font-size:18px;color:var(--text2);}
+  .topbar-right{gap:5px;}
+  /* Ocultar texto "Exportar" en mobile, dejar solo ícono */
+  .btn-label-mob{display:none;}
+  .icon-action-btn{padding:5px 8px;}
+  .currency-toggle{display:none;}
+  #syncStatus{display:none;}
   .mob-currency{display:flex;}
-  .page{padding:1rem;max-width:100%;}
-  .stat-grid{grid-template-columns:repeat(2,1fr);}
+
+  /* ── Página ── */
+  .page{padding:.75rem;max-width:100%;}
+
+  /* ── Filter bar: apila verticalmente en mobile ── */
+  .filter-bar{flex-direction:column;align-items:flex-start;gap:8px;padding:.75rem;}
+  .filter-bar select,.filter-bar input[type="text"],.filter-bar input[type="date"]{width:100%;max-width:100%;}
+  .filter-sep{display:none;}
+  .filter-label{font-size:11px;color:var(--text3);margin-bottom:0;}
+  .estado-pills{flex-wrap:wrap;width:100%;}
+  /* Fila de pills: empresa selector arriba, pills abajo */
+  .filter-row-inline{width:100%;}
+
+  /* ── Cards ── */
+  .card{padding:.875rem 1rem;}
+  .card-header{flex-wrap:wrap;gap:8px;}
+
+  /* ── Stat grid ── */
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .sc{padding:.625rem .75rem;}
+  .sc-num{font-size:17px;}
+
+  /* ── Formularios ── */
   .form-grid{grid-template-columns:1fr;}
   .form-grid-3{grid-template-columns:1fr;}
-  .filter-bar{gap:6px;}
-  .currency-toggle{display:none;}
-  .kpi-grid{grid-template-columns:repeat(2,1fr);}
-  .gantt-hdr,.gantt-row{grid-template-columns:130px 1fr 40px;}
-  .modal-box{padding:1.25rem 1rem;}
-  .data-table,.fin-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ── Tablas: scroll horizontal ── */
+  .data-table,.fin-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;}
+  /* Columnas menos críticas en tablas: ocultar en mobile */
+  .col-hide-mob{display:none;}
+
+  /* ── KPIs ── */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .kpi-card{padding:.75rem;}
+  .kpi-val{font-size:18px;}
+
+  /* ── Gantt / Timeline ── */
+  .gantt-hdr,.gantt-row{grid-template-columns:110px 1fr 36px;}
+  .gantt-label{font-size:11px;}
+
+  /* ── Modal ── */
+  .modal-overlay{padding:.5rem;}
+  .modal-box{padding:1.25rem 1rem;max-height:95vh;}
+
+  /* ── Balance ── */
   .balance-grid{grid-template-columns:1fr!important;}
-  #syncStatus{display:none;}
+
+  /* ── Botones acción en tablas: más pequeños y touch-friendly ── */
+  .btn-sm{padding:6px 10px;min-height:34px;}
+  .btn-gcal{width:34px;height:34px;}
+
+  /* ── Login ── */
+  .login-box{padding:2rem 1.5rem;}
+  /* Safari iOS: font-size mínimo 16px en inputs para evitar zoom automático */
+  input,select,textarea{font-size:16px;}
 }
+
 @media(min-width:681px){
   .mob-menu-btn{display:none;}
   .mob-currency{display:none;}
@@ -278,7 +337,7 @@ textarea{resize:vertical;min-height:80px;}
           <button class="ct-btn active" onclick="setCurrency('ARS',this)">ARS</button>
           <button class="ct-btn" onclick="setCurrency('USD',this)">USD</button>
         </div>
-        <button class="icon-action-btn" onclick="openExport()"><i class="ti ti-download"></i> <span>Exportar</span></button>
+        <button class="icon-action-btn" onclick="openExport()"><i class="ti ti-download"></i> <span class="btn-label-mob">Exportar</span></button>
         <button class="icon-action-btn" onclick="doLogout()" style="color:var(--red)" title="Cerrar sesión"><i class="ti ti-logout"></i></button>
       </div>
     </div>
