@@ -23,29 +23,58 @@ export function renderTareasTabla(tar){
   document.getElementById('tar-tiempo').style.display='none';
   const el=document.getElementById('tar-tabla');
   if(!tar.length){el.innerHTML='<p style="color:var(--text3);padding:.5rem 0">No hay tareas que coincidan.</p>';return;}
-  el.innerHTML=`<table class="data-table">
-    <thead><tr><th>Empresa</th><th>Descripción</th><th>Responsable</th><th>Inicio</th><th>Vence</th><th>Estado</th><th title="Google Calendar">GCal</th><th></th></tr></thead>
-    <tbody>${tar.map(t=>{
+  const isMob=window.innerWidth<=680;
+  if(isMob){
+    el.innerHTML=tar.map(t=>{
       const gcalEnviado=t.calendario_google===true;
       const gcalClass=gcalEnviado?'btn-gcal gcal-enviado':'btn-gcal';
-      const gcalTitle=gcalEnviado?'Ya en Google Calendar':'Enviar al Google Calendar';
       const gcalIcon=gcalEnviado?'ti-calendar-check':'ti-calendar-plus';
-      return`<tr>
-      <td class="muted">${empNombre(t.empresa_id)}</td>
-      <td>${t.descripcion||'—'}</td>
-      <td class="muted">${t.responsable||'—'}</td>
-      <td class="muted">${t.fecha_inicio||'—'}</td>
-      <td class="muted">${t.fecha_fin||'—'}</td>
-      <td>${badgeEstado(t.estado)}</td>
-      <td style="text-align:center">
-        <button id="gcal-btn-${t.id}" class="${gcalClass}" title="${gcalTitle}" onclick="gcalEnviarTarea(${t.id})" ${gcalEnviado?'disabled':''}><i class="ti ${gcalIcon}"></i></button>
-      </td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-sm" onclick="editTarea(${t.id})"><i class="ti ti-pencil"></i></button>
-        <button class="btn btn-sm btn-danger" onclick="delTarea(${t.id})"><i class="ti ti-trash"></i></button>
-      </td>
-    </tr>`;}).join('')}</tbody>
-  </table>`;
+      const gcalTitle=gcalEnviado?'Ya en Google Calendar':'Enviar al Google Calendar';
+      return`<div style="padding:.875rem 0;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;word-break:break-word">${t.descripcion||'—'}</div>
+            <div style="font-size:11px;color:var(--text3)">${empNombre(t.empresa_id)}</div>
+          </div>
+          <div style="margin-left:10px;flex-shrink:0">${badgeEstado(t.estado)}</div>
+        </div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text3);margin-bottom:8px;flex-wrap:wrap">
+          ${t.responsable?`<span><i class="ti ti-user" style="font-size:12px"></i> ${t.responsable}</span>`:''}
+          ${t.fecha_inicio?`<span><i class="ti ti-calendar" style="font-size:12px"></i> ${t.fecha_inicio}</span>`:''}
+          ${t.fecha_fin?`<span><i class="ti ti-calendar-due" style="font-size:12px"></i> Vence: ${t.fecha_fin}</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button id="gcal-btn-${t.id}" class="${gcalClass}" title="${gcalTitle}" onclick="gcalEnviarTarea(${t.id})" ${gcalEnviado?'disabled':''}><i class="ti ${gcalIcon}"></i></button>
+          <button class="btn btn-sm" onclick="editTarea(${t.id})"><i class="ti ti-pencil"></i> Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="delTarea(${t.id})"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    el.innerHTML=`<table class="data-table">
+      <thead><tr><th>Empresa</th><th>Descripción</th><th>Responsable</th><th>Inicio</th><th>Vence</th><th>Estado</th><th title="Google Calendar">GCal</th><th></th></tr></thead>
+      <tbody>${tar.map(t=>{
+        const gcalEnviado=t.calendario_google===true;
+        const gcalClass=gcalEnviado?'btn-gcal gcal-enviado':'btn-gcal';
+        const gcalTitle=gcalEnviado?'Ya en Google Calendar':'Enviar al Google Calendar';
+        const gcalIcon=gcalEnviado?'ti-calendar-check':'ti-calendar-plus';
+        return`<tr>
+        <td class="muted">${empNombre(t.empresa_id)}</td>
+        <td>${t.descripcion||'—'}</td>
+        <td class="muted">${t.responsable||'—'}</td>
+        <td class="muted">${t.fecha_inicio||'—'}</td>
+        <td class="muted">${t.fecha_fin||'—'}</td>
+        <td>${badgeEstado(t.estado)}</td>
+        <td style="text-align:center">
+          <button id="gcal-btn-${t.id}" class="${gcalClass}" title="${gcalTitle}" onclick="gcalEnviarTarea(${t.id})" ${gcalEnviado?'disabled':''}><i class="ti ${gcalIcon}"></i></button>
+        </td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm" onclick="editTarea(${t.id})"><i class="ti ti-pencil"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="delTarea(${t.id})"><i class="ti ti-trash"></i></button>
+        </td>
+      </tr>`;}).join('')}</tbody>
+    </table>`;
+  }
 }
 
 export function renderTareasTiempo(tar){
