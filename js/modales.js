@@ -66,6 +66,11 @@ export function openModal(type, data=null){
         <select id="m-empresa"><option value="">— sin empresa —</option>${empsOpts}</select></div>
       <div class="form-group" style="margin-bottom:10px"><label class="fl">Tema</label>
         <input id="m-tema" value="${data?.tema||''}" placeholder="Ej: Reunión, Acuerdo, Seguimiento…"/></div>
+      <div class="form-group" style="margin-bottom:10px"><label class="fl">Link (Google Drive u otro)</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="m-link" value="${data?.link||''}" placeholder="https://drive.google.com/..." style="flex:1"/>
+          ${data?.link?`<a href="${data.link}" target="_blank" class="btn btn-sm" title="Abrir link"><i class="ti ti-external-link"></i></a>`:''}
+        </div></div>
       <div class="form-group"><label class="fl">Texto *</label>
         <textarea id="m-texto" style="min-height:120px">${data?.texto||''}</textarea></div>
     </div>
@@ -74,7 +79,7 @@ export function openModal(type, data=null){
       <button class="btn btn-primary" onclick="saveModal()">Guardar</button>
     </div>`;
   }
-  else if(type==='proyecto'){
+    else if(type==='proyecto'){
     box.innerHTML=`<h3>${data?'Editar':'Nuevo'} proyecto</h3>
     <div class="form-grid" style="margin-bottom:10px">
       <div class="form-group" style="grid-column:1/-1"><label class="fl">Empresa</label>
@@ -83,6 +88,11 @@ export function openModal(type, data=null){
         <input id="m-nombre" value="${data?.nombre||''}"/></div>
       <div class="form-group" style="grid-column:1/-1"><label class="fl">Detalle / descripción</label>
         <textarea id="m-detalle">${data?.detalle||''}</textarea></div>
+      <div class="form-group" style="grid-column:1/-1"><label class="fl">Link (Google Drive u otro)</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="m-link" value="${data?.link||''}" placeholder="https://drive.google.com/..." style="flex:1"/>
+          ${data?.link?`<a href="${data.link}" target="_blank" class="btn btn-sm" title="Abrir link"><i class="ti ti-external-link"></i></a>`:''}
+        </div></div>
       <div class="form-group"><label class="fl">Fecha inicio</label><input type="date" id="m-fi" value="${data?.fecha_inicio||''}"/></div>
       <div class="form-group"><label class="fl">Fecha fin estimada</label><input type="date" id="m-ff" value="${data?.fecha_fin||''}"/></div>
       <div class="form-group"><label class="fl">Presupuesto</label><input type="number" id="m-pres" value="${data?.presupuesto||''}"/></div>
@@ -104,7 +114,7 @@ export function openModal(type, data=null){
       <button class="btn btn-primary" onclick="saveModal()">Guardar</button>
     </div>`;
   }
-  else if(type==='certificacion'){
+    else if(type==='certificacion'){
     const p=STATE.proyectos.find(x=>x.id===app.proyectoActivoId);
     box.innerHTML=`<h3>Nueva certificación — ${p?.nombre||''}</h3>
     <div class="form-grid" style="margin-bottom:10px">
@@ -155,7 +165,7 @@ export async function saveModal(){
   else if(modalType==='nota'){
     const texto=document.getElementById('m-texto').value.trim();
     if(!texto){alert('El texto es obligatorio');return;}
-    body={texto,tema:document.getElementById('m-tema').value.trim()||null,empresa_id:document.getElementById('m-empresa').value||null,fecha_input:today()};
+    body={texto,tema:document.getElementById('m-tema').value.trim()||null,link:document.getElementById('m-link').value.trim()||null,empresa_id:document.getElementById('m-empresa').value||null,fecha_input:today()};
     table='notas';
   }
   else if(modalType==='proyecto'){
@@ -163,6 +173,7 @@ export async function saveModal(){
     if(!nombre){alert('El nombre es obligatorio');return;}
     body={nombre,empresa_id:document.getElementById('m-empresa').value||null,
       detalle:document.getElementById('m-detalle').value,
+      link:document.getElementById('m-link').value.trim()||null,
       fecha_input:today(),
       fecha_inicio:document.getElementById('m-fi').value||null,
       fecha_fin:document.getElementById('m-ff').value||null,
