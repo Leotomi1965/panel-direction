@@ -20,6 +20,7 @@ export function renderNotas(){
           <span style="font-size:12px;color:var(--text3)">${n.fecha_input||'—'}</span>
           ${n.empresa_id?`<span style="font-size:12px;color:var(--teal);margin-left:8px">· ${empNombre(n.empresa_id)}</span>`:''}
           ${n.tema?`<span style="font-size:12px;color:var(--teal);margin-left:8px">· ${n.tema}</span>`:''}
+          ${n.link?`<a href="${n.link}" target="_blank" style="font-size:12px;color:var(--teal);margin-left:8px;text-decoration:none" title="Abrir archivo"><i class="ti ti-paperclip"></i> archivo</a>`:''}
         </div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm" onclick="editNota(${n.id})"><i class="ti ti-pencil"></i></button>
