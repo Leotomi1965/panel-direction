@@ -18,31 +18,68 @@ export function renderProyectosTabla(proy){
   document.getElementById('proy-gantt').style.display='none';
   const el=document.getElementById('proy-tabla');
   if(!proy.length){el.innerHTML='<p style="color:var(--text3);padding:.5rem 0">No hay proyectos.</p>';return;}
-  el.innerHTML=`<table class="data-table">
-    <thead><tr><th>Empresa</th><th>Proyecto</th><th>Inicio</th><th>Fin</th><th>Presupuesto</th><th>Avance</th><th>Estado</th><th></th></tr></thead>
-    <tbody>${proy.map(p=>{
+  const isMob=window.innerWidth<=680;
+  if(isMob){
+    el.innerHTML=proy.map(p=>{
       const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
       const avanceFis=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
       const montoCert=certs.reduce((s,c)=>s+(c.monto_certificado||0),0);
-      return`<tr>
-        <td class="muted">${empNombre(p.empresa_id)}</td>
-        <td><strong>${p.nombre||'—'}</strong>${p.detalle?`<div class="muted" style="font-size:11px">${p.detalle.slice(0,60)}${p.detalle.length>60?'…':''}</div>`:''}</td>
-        <td class="muted">${p.fecha_inicio||'—'}</td>
-        <td class="muted">${p.fecha_fin||'—'}</td>
-        <td class="muted">${fmtPeso(p.presupuesto)} ${badgeMoneda(p.moneda)}</td>
-        <td>
-          <div style="font-size:12px">${avanceFis}%</div>
+      return`<div style="padding:.875rem 0;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${p.nombre||'—'}</div>
+            <div style="font-size:11px;color:var(--text3)">${empNombre(p.empresa_id)}</div>
+          </div>
+          <div style="margin-left:10px;flex-shrink:0">${badgeEstado(p.estado)}</div>
+        </div>
+        ${p.detalle?`<div style="font-size:12px;color:var(--text2);margin-bottom:6px">${p.detalle.slice(0,80)}${p.detalle.length>80?'…':''}</div>`:''}
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text3);margin-bottom:8px;flex-wrap:wrap">
+          <span><i class="ti ti-currency-dollar" style="font-size:12px"></i> ${fmtPeso(p.presupuesto)} ${p.moneda||'ARS'}</span>
+          ${p.fecha_inicio?`<span><i class="ti ti-calendar" style="font-size:12px"></i> ${p.fecha_inicio}</span>`:''}
+          ${p.fecha_fin?`<span><i class="ti ti-calendar-due" style="font-size:12px"></i> ${p.fecha_fin}</span>`:''}
+        </div>
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px">
+            <span>Avance físico</span><span>${avanceFis}%</span>
+          </div>
           <div class="cert-bar-wrap"><div class="cert-bar" style="width:${avanceFis}%"></div></div>
-        </td>
-        <td>${badgeEstado(p.estado)}</td>
-        <td style="white-space:nowrap">
-          <button class="btn btn-sm" onclick="verDetalle(${p.id})" title="Ver certificaciones"><i class="ti ti-eye"></i></button>
-          <button class="btn btn-sm" onclick="editProyecto(${p.id})" title="Editar"><i class="ti ti-pencil"></i></button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="verDetalle(${p.id})"><i class="ti ti-eye"></i> Detalle</button>
+          ${p.link?`<a href="${p.link}" target="_blank" class="btn btn-sm" title="Abrir archivo"><i class="ti ti-paperclip"></i></a>`:''}
+          <button class="btn btn-sm" onclick="editProyecto(${p.id})"><i class="ti ti-pencil"></i></button>
           <button class="btn btn-sm btn-danger" onclick="delProyecto(${p.id})"><i class="ti ti-trash"></i></button>
-        </td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    el.innerHTML=`<table class="data-table">
+      <thead><tr><th>Empresa</th><th>Proyecto</th><th>Inicio</th><th>Fin</th><th>Presupuesto</th><th>Avance</th><th>Estado</th><th></th></tr></thead>
+      <tbody>${proy.map(p=>{
+        const certs=STATE.certificaciones.filter(c=>c.proyecto_id===p.id);
+        const avanceFis=certs.length?certs.reduce((a,c)=>new Date(c.fecha)>=new Date(a.fecha)?c:a).avance_fisico:0;
+        const montoCert=certs.reduce((s,c)=>s+(c.monto_certificado||0),0);
+        return`<tr>
+          <td class="muted">${empNombre(p.empresa_id)}</td>
+          <td><strong>${p.nombre||'—'}</strong>${p.detalle?`<div class="muted" style="font-size:11px">${p.detalle.slice(0,60)}${p.detalle.length>60?'…':''}</div>`:''}</td>
+          <td class="muted">${p.fecha_inicio||'—'}</td>
+          <td class="muted">${p.fecha_fin||'—'}</td>
+          <td class="muted">${fmtPeso(p.presupuesto)} ${badgeMoneda(p.moneda)}</td>
+          <td>
+            <div style="font-size:12px">${avanceFis}%</div>
+            <div class="cert-bar-wrap"><div class="cert-bar" style="width:${avanceFis}%"></div></div>
+          </td>
+          <td>${badgeEstado(p.estado)}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-sm" onclick="verDetalle(${p.id})" title="Ver certificaciones"><i class="ti ti-eye"></i></button>
+            ${p.link?`<a href="${p.link}" target="_blank" class="btn btn-sm" title="Abrir archivo"><i class="ti ti-paperclip"></i></a>`:''}
+            <button class="btn btn-sm" onclick="editProyecto(${p.id})" title="Editar"><i class="ti ti-pencil"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="delProyecto(${p.id})"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
 }
 
 export function renderProyectosGantt(proy){
