@@ -1,0 +1,5 @@
+Este archivo lo actualiza automáticamente .github/workflows/keep-repo-alive.yml
+una vez por mes, solo para que el repo nunca llegue a 60 días sin commits (límite
+en el que GitHub deshabilita los workflows programados). No tiene ningún otro uso.
+
+Última actualización automática: (pendiente del primer run)
