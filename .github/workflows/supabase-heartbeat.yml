@@ -1,0 +1,41 @@
+name: Supabase heartbeat
+
+# Supabase Free pausa el proyecto automáticamente tras 7 días sin actividad real
+# de base de datos. Este workflow hace una consulta mínima de solo lectura dos
+# veces por semana (margen amplio contra el límite de 7 días) para que eso no
+# vuelva a pasar. No modifica ningún dato: es un SELECT de 1 fila como máximo,
+# de solo lectura, contra una tabla existente de la app (empresas).
+
+on:
+  schedule:
+    - cron: '0 9 * * 1,5' # lunes y viernes 09:00 UTC
+  workflow_dispatch: {} # permite disparar manualmente para probar
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta mínima de solo lectura a Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Faltan los secrets SUPABASE_URL y/o SUPABASE_ANON_KEY en el repo."
+            exit 1
+          fi
+
+          http_status=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/empresas?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "HTTP status: $http_status"
+          cat /tmp/response.json
+
+          if [ "$http_status" -lt 200 ] || [ "$http_status" -ge 300 ]; then
+            echo "::error::Supabase respondió $http_status — revisar si el proyecto está pausado o hay otro problema."
+            exit 1
+          fi
+
+          echo "Heartbeat OK — Supabase respondió correctamente."
